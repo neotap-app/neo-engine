@@ -41,8 +41,8 @@ export async function buildMinigame(
   fs.writeFileSync(
     adapterEntry,
     [
-      `import { createMinigameRuntimeEnvironment } from '@getneotap/neo-engine';`,
-      `import type { MinigameAPI } from '@getneotap/neo-engine';`,
+      `import { createMinigameRuntimeEnvironment } from '@neotap.app/neo-engine';`,
+      `import type { MinigameAPI } from '@neotap.app/neo-engine';`,
       ``,
       `export function installMinigame(api: MinigameAPI) {`,
       `  return createMinigameRuntimeEnvironment(api);`,
@@ -55,7 +55,7 @@ export async function buildMinigame(
   fs.writeFileSync(
     gameEntry,
     [
-      `import { createRuntime } from '@getneotap/neo-engine';`,
+      `import { createRuntime } from '@neotap.app/neo-engine';`,
       `export { createRuntime };`,
       `export { default } from ${JSON.stringify(entryAbs)};`,
       ``,

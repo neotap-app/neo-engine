@@ -10,14 +10,14 @@ importers:
 
   examples/phaser-demo:
     dependencies:
-      '@getneotap/neo-engine':
+      '@neotap.app/neo-engine':
         specifier: workspace:*
         version: link:../../packages/neo-engine
       phaser:
         specifier: 3.90.0
         version: 3.90.0
     devDependencies:
-      '@getneotap/neo-engine-tools':
+      '@neotap.app/neo-engine-tools':
         specifier: workspace:*
         version: link:../../packages/neo-engine-tools
       typescript:
@@ -51,7 +51,7 @@ importers:
 
   packages/neo-engine-tools:
     dependencies:
-      '@getneotap/neo-engine':
+      '@neotap.app/neo-engine':
         specifier: workspace:*
         version: link:../neo-engine
       vite:

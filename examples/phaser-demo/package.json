@@ -4,11 +4,11 @@
   "private": true,
   "type": "module",
   "dependencies": {
-    "@getneotap/neo-engine": "workspace:*",
+    "@neotap.app/neo-engine": "workspace:*",
     "phaser": "3.90.0"
   },
   "devDependencies": {
-    "@getneotap/neo-engine-tools": "workspace:*",
+    "@neotap.app/neo-engine-tools": "workspace:*",
     "typescript": "^5.5.0",
     "vite": "^8.3.2"
   }

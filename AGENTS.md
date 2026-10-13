@@ -13,8 +13,8 @@ pnpm workspace monorepo：
 
 | 部件 | 说明 |
 | --- | --- |
-| `/packages/neo-engine` | 客户端 SDK 运行时（`@getneotap/neo-engine`）：manifest 解析、RAL 平台能力、`createRuntime` 外壳、平台实现（`h5` / `minigame` / `wechat` / `douyin`）。**纯客户端，无 node 依赖** |
-| `/packages/neo-engine-tools` | 构建工具 + CLI（`@getneotap/neo-engine-tools`，`bin: neo`）：`build/`（无头构建接口 `buildProject`）+ `cli/`。Node 侧，依赖 SDK |
+| `/packages/neo-engine` | 客户端 SDK 运行时（`@neotap.app/neo-engine`）：manifest 解析、RAL 平台能力、`createRuntime` 外壳、平台实现（`h5` / `minigame` / `wechat` / `douyin`）。**纯客户端，无 node 依赖** |
+| `/packages/neo-engine-tools` | 构建工具 + CLI（`@neotap.app/neo-engine-tools`，`bin: neo`）：`build/`（无头构建接口 `buildProject`）+ `cli/`。Node 侧，依赖 SDK |
 | `/examples/phaser-demo` | 示例游戏工程（原工程结构示范） |
 | `/specs` | 需求、技术文档与约定（spec 源头） |
 

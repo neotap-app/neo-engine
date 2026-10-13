@@ -1,7 +1,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 
-import type { NeoManifest } from '@getneotap/neo-engine';
+import type { NeoManifest } from '@neotap.app/neo-engine';
 
 import { readManifest } from '../build/common';
 

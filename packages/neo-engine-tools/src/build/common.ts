@@ -1,7 +1,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 
-import { NeoManifest } from '@getneotap/neo-engine';
+import { NeoManifest } from '@neotap.app/neo-engine';
 
 export const MANIFEST_FILE = 'package.neo.json';
 export const DEFAULT_ENTRY = 'src/index.ts';

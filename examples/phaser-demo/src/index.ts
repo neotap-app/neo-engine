@@ -1,5 +1,5 @@
 import Phaser from 'phaser';
-import type { NeoGameInstance2D } from '@getneotap/neo-engine';
+import type { NeoGameInstance2D } from '@neotap.app/neo-engine';
 
 class DemoScene extends Phaser.Scene {
   constructor() {

@@ -33,7 +33,7 @@ export async function buildH5(options: TargetBuildOptions): Promise<void> {
   ].join('\n');
 
   const bootstrap = [
-    `import { createH5Capabilities, createRuntime } from '@getneotap/neo-engine';`,
+    `import { createH5Capabilities, createRuntime } from '@neotap.app/neo-engine';`,
     `import entry from ${JSON.stringify(entryAbs)};`,
     ``,
     `const mount = document.getElementById('game');`,

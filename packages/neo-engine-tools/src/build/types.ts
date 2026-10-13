@@ -1,4 +1,4 @@
-import type { NeoManifest } from '@getneotap/neo-engine';
+import type { NeoManifest } from '@neotap.app/neo-engine';
 
 export type Target = 'h5' | 'wechat' | 'douyin';
 

@@ -15,8 +15,8 @@
 
 | 包 | 说明 |
 | --- | --- |
-| `@getneotap/neo-engine` | 客户端运行时 SDK（manifest、平台能力、`createRuntime`） |
-| `@getneotap/neo-engine-tools` | 构建工具 + `neo` CLI（无头构建接口 `buildProject`） |
+| `@neotap.app/neo-engine` | 客户端运行时 SDK（manifest、平台能力、`createRuntime`） |
+| `@neotap.app/neo-engine-tools` | 构建工具 + `neo` CLI（无头构建接口 `buildProject`） |
 
 ## 仓库
 

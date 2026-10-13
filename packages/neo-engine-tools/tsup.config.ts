@@ -7,5 +7,5 @@ export default defineConfig({
   sourcemap: true,
   clean: true,
   treeshake: true,
-  external: ['@getneotap/neo-engine', 'vite'],
+  external: ['@neotap.app/neo-engine', 'vite'],
 });

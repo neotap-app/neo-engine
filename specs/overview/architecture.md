@@ -6,7 +6,7 @@
 ## 目录结构
 
 ```
-packages/neo-engine/src/          # @getneotap/neo-engine：客户端 SDK 运行时
+packages/neo-engine/src/          # @neotap.app/neo-engine：客户端 SDK 运行时
   index.ts                        # SDK 公共入口（= sdk/index.ts）
   sdk/
     manifest/index.ts             # manifest 解析实体类 NeoManifest
@@ -16,7 +16,7 @@ packages/neo-engine/src/          # @getneotap/neo-engine：客户端 SDK 运行
     platforms/                    # 平台能力实现 + DOM shim
       h5/  minigame/  wechat/  douyin/
 
-packages/neo-engine-tools/src/    # @getneotap/neo-engine-tools：构建工具 + CLI（Node 侧）
+packages/neo-engine-tools/src/    # @neotap.app/neo-engine-tools：构建工具 + CLI（Node 侧）
   build/
     index.ts  types.ts  common.ts
     platforms/                    # 平台特定构建：h5 / wechat / douyin / minigame

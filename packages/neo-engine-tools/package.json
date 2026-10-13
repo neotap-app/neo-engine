@@ -1,5 +1,5 @@
 {
-  "name": "@getneotap/neo-engine-tools",
+  "name": "@neotap.app/neo-engine-tools",
   "version": "0.1.0",
   "private": true,
   "type": "module",
@@ -29,7 +29,7 @@
     "clean": "rimraf dist"
   },
   "dependencies": {
-    "@getneotap/neo-engine": "workspace:*",
+    "@neotap.app/neo-engine": "workspace:*",
     "vite": "^8.3.2"
   },
   "devDependencies": {

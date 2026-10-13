@@ -15,8 +15,8 @@ A lightweight, cross-platform **JavaScript / TypeScript game framework** built o
 
 | Package | Description |
 | --- | --- |
-| `@getneotap/neo-engine` | Client runtime SDK (manifest, platform capabilities, `createRuntime`) |
-| `@getneotap/neo-engine-tools` | Build tools + `neo` CLI (headless `buildProject` API) |
+| `@neotap.app/neo-engine` | Client runtime SDK (manifest, platform capabilities, `createRuntime`) |
+| `@neotap.app/neo-engine-tools` | Build tools + `neo` CLI (headless `buildProject` API) |
 
 ## Repository
 

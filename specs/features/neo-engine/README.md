@@ -24,7 +24,7 @@
 | 移动端 | Capacitor（复用 H5 产物）。当前稳定 v8（Node≥22）；官方游戏指南首推 Phaser+Capacitor；壳内嵌宿主运行时、UGC 游戏产物远程加载；存储走 `@capacitor/preferences` 勿用 localStorage；iOS 需隐私清单、国内安卓需备案+软著（见 [research/capacitor.md](/specs/features/neo-engine/research/capacitor.md)） |
 | 桌面端 | 暂缓（Tauri/Electron 皆可，后续再定） |
 | 其他平台 | 逐个加平台实现（延续社区 adapter 优先策略），不引入 Taro/uni-app |
-| 工程归属 | **两包分离**：`@getneotap/neo-engine` 只含客户端 SDK（`src/sdk`，游戏脚本与宿主引用）；`@getneotap/neo-engine-tools` 含构建工具 + CLI（`src/build` + `src/cli`，Node 侧，依赖 SDK）。宿主平台（AI 创作侧）注入提示词 + SDK 供 sandbox 内测试/验证/构建（暂不支持 sandbox 内发布构建）；原工程上传平台审核，平台用**无头构建服务**（`@getneotap/neo-engine-tools/build`）构建/发布 |
+| 工程归属 | **两包分离**：`@neotap.app/neo-engine` 只含客户端 SDK（`src/sdk`，游戏脚本与宿主引用）；`@neotap.app/neo-engine-tools` 含构建工具 + CLI（`src/build` + `src/cli`，Node 侧，依赖 SDK）。宿主平台（AI 创作侧）注入提示词 + SDK 供 sandbox 内测试/验证/构建（暂不支持 sandbox 内发布构建）；原工程上传平台审核，平台用**无头构建服务**（`@neotap.app/neo-engine-tools/build`）构建/发布 |
 
 ## 工程约定（约定优于配置）
 
@@ -68,11 +68,11 @@
 - 分包限制（微信主包 4M/总包 30M/单分包不限；抖音总包 20M/主包 4M/单分包 20M），详见 [research/build-toolchain.md](/specs/features/neo-engine/research/build-toolchain.md)
 - 发布产物 = 平台无关 manifest + 各平台产物引用；审核用原工程（含源码）
 
-### 构建接口（`@getneotap/neo-engine-tools/build`）
+### 构建接口（`@neotap.app/neo-engine-tools/build`）
 
 - 构建逻辑位于 `packages/neo-engine-tools/src/build/`，暴露编程接口（**不依赖 CLI**），供平台**无头构建服务**直接调用：
   ```ts
-  import { buildProject } from '@getneotap/neo-engine-tools/build';
+  import { buildProject } from '@neotap.app/neo-engine-tools/build';
   await buildProject({ cwd, target: 'h5' | 'wechat' | 'douyin', outDir });
   ```
 - CLI 的 `build` 命令是薄壳，解析 argv 后调用 `buildProject`
@@ -80,7 +80,7 @@
 ## 目录结构（SDK / Tools 两包分离）
 
 ```
-packages/neo-engine/src/          # @getneotap/neo-engine：客户端 SDK 运行时
+packages/neo-engine/src/          # @neotap.app/neo-engine：客户端 SDK 运行时
   index.ts                        # SDK 公共入口（= sdk/index.ts）
   sdk/
     manifest/index.ts             # manifest 解析实体类 NeoManifest（parse/fromObject/校验）
@@ -92,7 +92,7 @@ packages/neo-engine/src/          # @getneotap/neo-engine：客户端 SDK 运行
     platforms/                    # 平台能力实现 + DOM shim
       h5/  minigame/  wechat/  douyin/
 
-packages/neo-engine-tools/src/    # @getneotap/neo-engine-tools：构建工具 + CLI（Node 侧，依赖 SDK）
+packages/neo-engine-tools/src/    # @neotap.app/neo-engine-tools：构建工具 + CLI（Node 侧，依赖 SDK）
   build/
     index.ts  types.ts  common.ts
     platforms/                    # 平台特定构建
