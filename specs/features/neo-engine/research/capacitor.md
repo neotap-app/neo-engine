@@ -83,7 +83,7 @@ npx cap build android|ios      # 出签名 AAB/APK/IPA
 
 ## 落地建议
 
-1. **接入点**：`apps/app-frontend`（Next.js H5 产物）build → `webDir`；新增 `capacitor.config.ts` + `@capacitor/android` / `@capacitor/ios` 原生壳工程（git 管理）。
+1. **接入点**：宿主平台的前端应用（Next.js H5 产物）build → `webDir`；新增 `capacitor.config.ts` + `@capacitor/android` / `@capacitor/ios` 原生壳工程（git 管理）。
 2. **宿主 vs 游戏产物分离**：壳内嵌**宿主运行时**（登录/游戏列表/RAL 能力/账号体系）；**UGC 小游戏产物保持远程加载**（现有 CDN/COS 分发），不打进 APK——契合共享宿主运行时 + 动态拉取游戏定位。
 3. **RAL 接入点**：RAL 平台能力接口用「能力 → 插件」适配层实现，Web 与 Native 两端同一接口签名。
 4. **WebGL 兜底**：宿主层监听 `webglcontextlost/restored`，context lost 时提示 + reload；低端机限制纹理规模，优先压缩纹理。

@@ -17,14 +17,14 @@
 | 编译管线 | 三段式：原工程（唯一源码）→ 转译（平台特定人类可读源码）→ 编译（平台特定工具链出发布包）。**转译用 vite**（bundle 锁定 CommonJS+ES5，禁 eval/new Function、Proxy 不可用），**编译/发布用平台官方工具**（微信 `miniprogram-ci` 支持 `type:'miniGame'`；抖音走 IDE/IDE CLI 上传，`@douyin-minigame/cli` 非上传工具）。无成熟 vite 小游戏插件，自组装最低风险（见 [research/build-toolchain.md](/specs/features/neo-engine/research/build-toolchain.md)） |
 | 小游戏适配 | 官方 adapter 基线（抖音 `tt-adapter` 明确支持 three/phaser 且有官方 demo；微信 `weapp-adapter` 官方自述「模拟远不完整仅作参考」）+ 薄平台分派层（`typeof wx !== 'undefined' ? wx : tt`）+ 补丁；**必须 vendor 进仓库**（两侧官方 adapter 均非活跃开源）。注意抖音命名空间是 `tt.*` 不是 `dd.*`（见 [research/minigame-adapter.md](/specs/features/neo-engine/research/minigame-adapter.md)） |
 | 分包 | 转译阶段可配置分包策略 + 资源远程/集成可选 |
-| 产物格式 | 平台无关 manifest + 每平台产物；static-host 后续按需改造，不硬 fit 现状 |
+| 产物格式 | 平台无关 manifest + 每平台产物；宿主平台的静态资源托管后续按需适配，不硬 fit 现状 |
 | 平台能力(RAL) | 能力接口（IStorage/IAudio/IInput/ILifecycle/…）+ 每平台实现 + 能力降级 |
 | 首期开放能力 | **仅本地存储 + 音频播放**。引擎必需项（资源加载/输入/生命周期/渲染上下文）随外壳默认提供；震动/分享/埋点/广告/支付/登录均后置，但接口预留扩展点，后补不改架构 |
 | 资源寻址 | 运行时资源加载函数，平台 specific 运行时按打包配置 resolve（key → 远程鉴权 URL / 分包本地） |
 | 移动端 | Capacitor（复用 H5 产物）。当前稳定 v8（Node≥22）；官方游戏指南首推 Phaser+Capacitor；壳内嵌宿主运行时、UGC 游戏产物远程加载；存储走 `@capacitor/preferences` 勿用 localStorage；iOS 需隐私清单、国内安卓需备案+软著（见 [research/capacitor.md](/specs/features/neo-engine/research/capacitor.md)） |
 | 桌面端 | 暂缓（Tauri/Electron 皆可，后续再定） |
 | 其他平台 | 逐个加平台实现（延续社区 adapter 优先策略），不引入 Taro/uni-app |
-| 工程归属 | **两包分离**：`@getneotap/neo-engine` 只含客户端 SDK（`src/sdk`，游戏脚本与宿主引用）；`@getneotap/neo-engine-tools` 含构建工具 + CLI（`src/build` + `src/cli`，Node 侧，依赖 SDK）。studio-agent 注入提示词 + SDK 供 sandbox 内测试/验证/构建（暂不支持 sandbox 内发布构建）；原工程上传平台审核，平台用**无头构建服务**（`@getneotap/neo-engine-tools/build`）构建/发布 |
+| 工程归属 | **两包分离**：`@getneotap/neo-engine` 只含客户端 SDK（`src/sdk`，游戏脚本与宿主引用）；`@getneotap/neo-engine-tools` 含构建工具 + CLI（`src/build` + `src/cli`，Node 侧，依赖 SDK）。宿主平台（AI 创作侧）注入提示词 + SDK 供 sandbox 内测试/验证/构建（暂不支持 sandbox 内发布构建）；原工程上传平台审核，平台用**无头构建服务**（`@getneotap/neo-engine-tools/build`）构建/发布 |
 
 ## 工程约定（约定优于配置）
 
@@ -125,8 +125,7 @@ packages/neo-engine-tools/src/    # @getneotap/neo-engine-tools：构建工具 +
 
 ## 相关
 
-- 静态资源托管（鉴权回源 COS）：[/specs/features/static-host/README.md](/specs/features/static-host/README.md)
-- studio-agent（AI 创作）：`/apps/app-backend/src/modules/studio-agent/`
+- 宿主平台集成（静态资源托管、AI 创作 studio-agent 等）属于平台仓库，不在本仓库范围；本仓库只维护平台无关的引擎 SDK 与构建工具
 
 ## 调研索引
 
