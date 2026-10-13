@@ -1,0 +1,32 @@
+# AI Agents
+.claude
+!.claude/skills/
+!.claude/skills/**
+.continue
+.qwen
+.agents
+!.agents/skills/
+!.agents/skills/**
+.codex/*
+!.codex/environments/
+!.codex/environments/environment.toml
+
+# Dependencies
+node_modules/
+
+# Env
+*.env
+*.env.*
+!*.env.example
+!env.example
+
+# Build / caches
+dist/
+out/
+*.tsbuildinfo
+.neo-build/
+
+# Logs / OS
+*.log
+.DS_Store
+Thumbs.db

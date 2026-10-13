@@ -1,0 +1,41 @@
+{
+  "name": "@getneotap/neo-engine-tools",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Neo Engine 构建工具 + CLI：转译/打包小游戏与 H5 产物、无头构建接口。",
+  "exports": {
+    "./build": {
+      "types": "./dist/build/index.d.ts",
+      "import": "./dist/build/index.js",
+      "require": "./dist/build/index.cjs"
+    },
+    "./cli": {
+      "types": "./dist/cli/index.d.ts",
+      "import": "./dist/cli/index.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "bin": {
+    "neo": "./dist/cli/bin.js"
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsup",
+    "dev": "tsup --watch",
+    "type-check": "tsc --noEmit",
+    "clean": "rimraf dist"
+  },
+  "dependencies": {
+    "@getneotap/neo-engine": "workspace:*",
+    "vite": "^8.3.2"
+  },
+  "devDependencies": {
+    "@types/node": "^20.11.5",
+    "rimraf": "^5.0.0",
+    "tsup": "^8.0.0",
+    "typescript": "^5.5.0"
+  }
+}

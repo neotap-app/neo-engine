@@ -1,0 +1,6 @@
+{
+  "name": "phaser-demo",
+  "version": "1.0.0",
+  "engine": "neo-engine@0.1.0",
+  "entry": "src/index.ts"
+}
