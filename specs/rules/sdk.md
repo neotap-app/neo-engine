@@ -13,10 +13,11 @@
 
 ## 平台能力（RAL）
 
-- 游戏脚本只依赖能力接口（`IStorage` / `IAudio` / `IInput` / `ILifecycle` / `IResource`，见 `types/game-context/`），**禁止直接用 `window` / `wx` / `tt` 等全局**
+- 游戏脚本只依赖能力接口（`IStorage` / `IAudio` / `IInput` / `ILifecycle` / `IResource` / `ISystem` / `IScreen`，见 `types/game-context/`），**禁止直接用 `window` / `wx` / `tt` 等全局**
 - 平台能力实现放 `src/sdk/platforms/<platform>/`；无 DOM 小游戏的公共逻辑放 `platforms/minigame/`（基于 `MinigameAPI` 抽象），`wechat/` 与 `douyin/` 只做 `wx.*` / `tt.*` 薄封装 + 自动检测
 - 无实现的能力一律 **no-op 降级**，接口预留扩展点（震动 / 分享 / 埋点 / 广告 / 支付 / 登录等后补，**不改架构**）
 - 新增平台 = 新增 `platforms/<platform>/` 实现 + 自动检测，不改调用方
+- 方向/屏幕信息：小游戏侧基于 `MinigameAPI` 抽象（`getSystemInfoSync` / `setDeviceOrientation` / `onDeviceOrientationChange`），方向判定以 `windowWidth`/`windowHeight` 为准（微信文档提示 iOS 横屏 `deviceOrientation` 可能不准）
 
 ## 引擎外壳
 

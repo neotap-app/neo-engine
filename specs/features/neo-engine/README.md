@@ -119,9 +119,11 @@ packages/neo-engine-tools/src/    # @neotap.app/neo-engine-tools：构建工具 
 - 能力接口 + 每平台实现（`h5` / `wechat` / `douyin` / …）+ 能力降级（无实现则 no-op）
 - 首期仅实现：`IStorage`（本地存储）、`IAudio`（音频播放）
 - 引擎必需接口随外壳：`IResource`（资源加载）、`IPointer`/输入、`ILifecycle`（前后台/onShow/onHide）、渲染上下文
+- 环境信息：`ISystem`（`getEnvironmentInfo` → 平台 + 运行时 + 设备信息）；屏幕信息：`IScreen`（屏幕尺寸/像素比/安全区、获取/监听/取消监听方向、能否及请求主动改方向）
 - 游戏脚本只依赖接口，禁止直接用 `window` / `wx` / `tt` 全局
 - 预留扩展点（后补不改架构）：震动 / 分享 / 埋点 / 广告 / 支付 / 登录 / 网络请求
 - 实现：`packages/neo-engine/src/sdk/platforms/h5/`（真 DOM）、`minigame/`（共享 DOM shim + 能力，基于 `MinigameAPI` 抽象）、`wechat/` 与 `douyin/`（`wx.*` / `tt.*` 薄封装 + 自动检测）
+- 方向/屏幕：小游戏侧方向监听走 `wx/tt.onDeviceOrientationChange`，判定以 `windowWidth`/`windowHeight` 为准（微信文档提示 iOS 横屏 `deviceOrientation` 可能不准）；主动改方向走 `wx/tt.setDeviceOrientation`
 
 ## 相关
 

@@ -13,7 +13,7 @@ export function createDouyinCapabilities(options: MinigameCapabilityOptions = {}
   if (!api) {
     throw new Error('douyin runtime (tt) not found');
   }
-  return createMinigameCapabilities(api as never, options) as DouyinCapabilities;
+  return createMinigameCapabilities(api as never, { ...options, platform: 'douyin' }) as DouyinCapabilities;
 }
 
 export function createDouyinRuntimeEnvironment(options: MinigameCapabilityOptions = {}) {
@@ -21,5 +21,5 @@ export function createDouyinRuntimeEnvironment(options: MinigameCapabilityOption
   if (!api) {
     throw new Error('douyin runtime (tt) not found');
   }
-  return createMinigameRuntimeEnvironment(api as never, options);
+  return createMinigameRuntimeEnvironment(api as never, { ...options, platform: 'douyin' });
 }

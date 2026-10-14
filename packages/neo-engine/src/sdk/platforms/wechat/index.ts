@@ -13,7 +13,7 @@ export function createWechatCapabilities(options: MinigameCapabilityOptions = {}
   if (!api) {
     throw new Error('wechat runtime (wx) not found');
   }
-  return createMinigameCapabilities(api as never, options) as WechatCapabilities;
+  return createMinigameCapabilities(api as never, { ...options, platform: 'wechat' }) as WechatCapabilities;
 }
 
 export function createWechatRuntimeEnvironment(options: MinigameCapabilityOptions = {}) {
@@ -21,5 +21,5 @@ export function createWechatRuntimeEnvironment(options: MinigameCapabilityOption
   if (!api) {
     throw new Error('wechat runtime (wx) not found');
   }
-  return createMinigameRuntimeEnvironment(api as never, options);
+  return createMinigameRuntimeEnvironment(api as never, { ...options, platform: 'wechat' });
 }

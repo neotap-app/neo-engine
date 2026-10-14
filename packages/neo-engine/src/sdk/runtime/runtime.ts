@@ -92,6 +92,8 @@ export function createRuntime(): NeoRuntime {
         storage: options.capabilities.storage,
         audio: options.capabilities.audio,
         load: options.capabilities.resource,
+        system: options.capabilities.system,
+        screen: options.capabilities.screen,
       };
 
       const mod = await options.loadInstance();

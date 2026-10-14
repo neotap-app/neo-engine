@@ -3,12 +3,16 @@ import type { IAudio } from '../../types/game-context/audio';
 import type { IInput } from '../../types/game-context/input';
 import type { ILifecycle } from '../../types/game-context/lifecycle';
 import type { IResource } from '../../types/game-context/resource';
+import type { IScreen } from '../../types/game-context/screen';
 import type { IStorage } from '../../types/game-context/storage';
+import type { ISystem } from '../../types/game-context/system';
 import { createH5Audio } from './audio';
 import { createH5Input } from './input';
 import { createH5Lifecycle } from './lifecycle';
 import { createH5Resource } from './resource';
+import { createH5Screen } from './screen';
 import { createH5Storage } from './storage';
+import { createH5System } from './system';
 
 export interface H5CapabilityOptions {
   storage?: Parameters<typeof createH5Storage>[0];
@@ -22,6 +26,8 @@ export interface H5Capabilities extends CapabilityBundle {
   input: IInput;
   lifecycle: ILifecycle;
   resource: IResource;
+  system: ISystem;
+  screen: IScreen;
 }
 
 export function createH5Capabilities(options: H5CapabilityOptions = {}): H5Capabilities {
@@ -31,5 +37,7 @@ export function createH5Capabilities(options: H5CapabilityOptions = {}): H5Capab
     input: createH5Input(options.input),
     lifecycle: createH5Lifecycle(),
     resource: createH5Resource(options.resource),
+    system: createH5System(),
+    screen: createH5Screen(),
   };
 }

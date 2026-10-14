@@ -2,8 +2,10 @@ import type Phaser from 'phaser';
 import type * as THREE from 'three';
 
 import type { IAudio } from './game-context/audio';
+import type { IScreen } from './game-context/screen';
 import type { IStorage } from './game-context/storage';
 import type { IResource } from './game-context/resource';
+import type { ISystem } from './game-context/system';
 
 export type GameMode = '2d' | '3d';
 
@@ -13,6 +15,8 @@ export interface GameContext {
   storage: IStorage;
   audio: IAudio;
   load: IResource;
+  system: ISystem;
+  screen: IScreen;
 }
 
 export interface GameContext2D extends GameContext {

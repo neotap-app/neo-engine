@@ -34,6 +34,30 @@ export interface MinigameCanvas {
   removeEventListener?(type: string, listener: () => void): void;
 }
 
+export interface MinigameSafeArea {
+  top: number;
+  right: number;
+  bottom: number;
+  left: number;
+}
+
+export interface MinigameSystemInfo {
+  brand?: string;
+  model?: string;
+  system?: string;
+  platform?: string;
+  language?: string;
+  version?: string;
+  SDKVersion?: string;
+  pixelRatio?: number;
+  screenWidth?: number;
+  screenHeight?: number;
+  windowWidth?: number;
+  windowHeight?: number;
+  statusBarHeight?: number;
+  safeArea?: MinigameSafeArea;
+}
+
 export interface MinigameAPI {
   createCanvas(): MinigameCanvas;
   createImage?(): unknown;
@@ -47,7 +71,17 @@ export interface MinigameAPI {
   onTouchEnd(callback: (event: MinigameTouchEvent) => void): void;
   onShow?(callback: () => void): void;
   onHide?(callback: () => void): void;
-  getSystemInfoSync?(): { windowWidth?: number; windowHeight?: number };
+  getSystemInfoSync?(): MinigameSystemInfo;
+  getDeviceInfo?(): Partial<MinigameSystemInfo>;
+  getAppBaseInfo?(): Partial<MinigameSystemInfo>;
+  getSDKVersion?(): string;
+  setDeviceOrientation?(options: {
+    value: 'portrait' | 'landscape';
+    success?: () => void;
+    fail?: () => void;
+  }): void;
+  onDeviceOrientationChange?(callback: (res: { deviceOrientation?: 'portrait' | 'landscape' }) => void): void;
+  offDeviceOrientationChange?(callback: (res: { deviceOrientation?: 'portrait' | 'landscape' }) => void): void;
 }
 
 export function detectMinigameAPI(): { api: MinigameAPI; namespace: 'wechat' | 'douyin' } | null {

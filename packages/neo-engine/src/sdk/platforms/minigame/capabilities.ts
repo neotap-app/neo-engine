@@ -3,9 +3,12 @@ import type { IAudio, AudioPlayOptions } from '../../types/game-context/audio';
 import type { IInput, PointerEventData } from '../../types/game-context/input';
 import type { ILifecycle } from '../../types/game-context/lifecycle';
 import type { IResource, ResourceSource } from '../../types/game-context/resource';
-import type { MinigameAPI, MinigameInnerAudio, MinigameTouchEvent } from './api';
+import type { IScreen, Orientation, SafeArea, ScreenInfo } from '../../types/game-context/screen';
+import type { DeviceInfo, EnvironmentInfo, ISystem, PlatformName } from '../../types/game-context/system';
+import type { MinigameAPI, MinigameInnerAudio, MinigameSystemInfo, MinigameTouchEvent } from './api';
 
 export interface MinigameCapabilityOptions {
+  platform?: PlatformName;
   resource?: {
     baseUrl?: string;
     manifest?: Record<string, string>;
@@ -183,4 +186,112 @@ function apiRequest(api: MinigameAPI, url: string): Promise<string> {
       fail: reject,
     });
   });
+}
+
+export function createMinigameSystem(api: MinigameAPI, platform: PlatformName): ISystem {
+  return {
+    name: 'system',
+    available: Boolean(api.getSystemInfoSync),
+    getEnvironmentInfo(): EnvironmentInfo {
+      const sys = api.getSystemInfoSync?.() ?? {};
+      const device = api.getDeviceInfo?.() ?? {};
+      const base = api.getAppBaseInfo?.() ?? {};
+      const runtimeVersion = api.getSDKVersion?.() ?? base.SDKVersion ?? sys.SDKVersion ?? '';
+      const deviceInfo: DeviceInfo = {
+        brand: device.brand ?? sys.brand,
+        model: device.model ?? sys.model,
+        system: device.system ?? sys.system,
+        pixelRatio: sys.pixelRatio ?? 1,
+        screenWidth: sys.screenWidth ?? 0,
+        screenHeight: sys.screenHeight ?? 0,
+        windowWidth: sys.windowWidth ?? 0,
+        windowHeight: sys.windowHeight ?? 0,
+      };
+      return {
+        platform,
+        runtime: {
+          name: platform,
+          version: runtimeVersion,
+          language: base.language ?? sys.language,
+          platform: base.platform ?? sys.platform,
+        },
+        device: deviceInfo,
+      };
+    },
+  };
+}
+
+function readSystemInfo(api: MinigameAPI): MinigameSystemInfo {
+  return api.getSystemInfoSync?.() ?? {};
+}
+
+function toSafeArea(sys: MinigameSystemInfo): SafeArea | undefined {
+  if (!sys.safeArea) {
+    return undefined;
+  }
+  return {
+    top: sys.safeArea.top,
+    right: sys.safeArea.right,
+    bottom: sys.safeArea.bottom,
+    left: sys.safeArea.left,
+  };
+}
+
+export function createMinigameScreen(api: MinigameAPI): IScreen {
+  const listeners = new Set<(orientation: Orientation) => void>();
+
+  const getOrientation = (): Orientation => {
+    const { windowWidth: w, windowHeight: h } = readSystemInfo(api);
+    if (typeof w === 'number' && typeof h === 'number' && w > 0 && h > 0) {
+      return h >= w ? 'portrait' : 'landscape';
+    }
+    return 'portrait';
+  };
+
+  const handleDeviceOrientationChange = () => {
+    const orientation = getOrientation();
+    listeners.forEach((fn) => fn(orientation));
+  };
+
+  api.onDeviceOrientationChange?.(handleDeviceOrientationChange);
+
+  return {
+    name: 'screen',
+    available: true,
+    getInfo(): ScreenInfo {
+      const sys = readSystemInfo(api);
+      return {
+        width: sys.screenWidth ?? 0,
+        height: sys.screenHeight ?? 0,
+        pixelRatio: sys.pixelRatio ?? 1,
+        orientation: getOrientation(),
+        statusBarHeight: sys.statusBarHeight,
+        safeArea: toSafeArea(sys),
+      };
+    },
+    getOrientation,
+    canChangeOrientation() {
+      return typeof api.setDeviceOrientation === 'function';
+    },
+    requestOrientation(orientation: Orientation): Promise<boolean> {
+      return new Promise<boolean>((resolve) => {
+        const setDeviceOrientation = api.setDeviceOrientation;
+        if (typeof setDeviceOrientation !== 'function') {
+          resolve(false);
+          return;
+        }
+        setDeviceOrientation({
+          value: orientation,
+          success: () => resolve(true),
+          fail: () => resolve(false),
+        });
+      });
+    },
+    onOrientationChange(listener) {
+      listeners.add(listener);
+    },
+    offOrientationChange(listener) {
+      listeners.delete(listener);
+    },
+  };
 }
