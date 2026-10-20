@@ -32,9 +32,13 @@ export async function buildH5(options: TargetBuildOptions): Promise<void> {
     ``,
   ].join('\n');
 
+  const manifestLiteral = JSON.stringify(manifest.toJSON());
+
   const bootstrap = [
-    `import { createH5Capabilities, createRuntime } from '@neotap.app/neo-engine';`,
+    `import { createH5Capabilities, createRuntime, NeoManifest } from '@neotap.app/neo-engine';`,
     `import entry from ${JSON.stringify(entryAbs)};`,
+    ``,
+    `const manifest = NeoManifest.fromObject(${manifestLiteral});`,
     ``,
     `const mount = document.getElementById('game');`,
     `if (!mount) {`,
@@ -47,6 +51,7 @@ export async function buildH5(options: TargetBuildOptions): Promise<void> {
     `void runtime.mount({`,
     `  mount: { element: mount },`,
     `  capabilities,`,
+    `  manifest,`,
     `  loadInstance: async () => entry,`,
     `});`,
     ``,

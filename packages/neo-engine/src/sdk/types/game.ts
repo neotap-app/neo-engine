@@ -1,6 +1,7 @@
 import type Phaser from 'phaser';
 import type * as THREE from 'three';
 
+import type { NeoManifest } from '../manifest';
 import type { IAudio } from './game-context/audio';
 import type { IScreen } from './game-context/screen';
 import type { IStorage } from './game-context/storage';
@@ -11,6 +12,7 @@ export type GameMode = '2d' | '3d';
 
 export interface GameContext {
   mode: GameMode;
+  manifest: NeoManifest | null;
   canvas: HTMLCanvasElement;
   storage: IStorage;
   audio: IAudio;

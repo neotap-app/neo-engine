@@ -55,6 +55,8 @@
 
 - 分包 / tree-shake：由构建器基于 entry 的 **ES6 import 图**解析自动完成，无需声明 scenes/assets
 - 打包参数（分包策略 / 资源远程-本地 / 平台 target 等）**打包时才传入** CLI，不进 manifest
+- **引擎版本校验**：`readManifest` 是唯一强制校验点（build 与 `neo lint` 都经过它），将 `engine` 声明版本与实际安装的 `@neotap.app/neo-engine` 版本（读取其 `package.json`，不硬编码）**精确比对**；不一致直接报错，信息包含声明版本、安装版本与 manifest 路径。首期不做 semver 范围匹配
+- **manifest 运行时暴露**：生成的引导代码（H5 / 小游戏）内嵌 manifest JSON 并构造 `NeoManifest`，通过 `runtime.mount({ manifest })` 注入；运行时将同一实例挂到 `GameContext.manifest`（2D / 3D 一致），游戏脚本据此读取 `name` / `version` / `engine`。未注入时 `manifest` 为 `null`
 
 ## 编译管线
 

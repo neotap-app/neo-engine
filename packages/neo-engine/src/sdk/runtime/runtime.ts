@@ -89,6 +89,7 @@ export function createRuntime(): NeoRuntime {
       const canvas = options.canvas ?? createCanvas(options.mount);
       const base = {
         canvas,
+        manifest: options.manifest ?? null,
         storage: options.capabilities.storage,
         audio: options.capabilities.audio,
         load: options.capabilities.resource,

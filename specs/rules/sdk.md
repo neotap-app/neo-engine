@@ -23,3 +23,4 @@
 
 - `runtime/` 只做编排（加载包 / 选引擎 / 生命周期），渲染与场景逻辑交给 Phaser（2D）/ Three.js（3D）
 - 2D 与 3D **互不混合渲染**：由 `GameMode`（`'2d' | '3d'`）选择引擎，两者不共享渲染上下文
+- manifest 由引导方通过 `RuntimeOptions.manifest` 注入，运行时原样挂到 `GameContext.manifest`（2D / 3D 一致，未注入为 `null`）
