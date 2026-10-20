@@ -17,6 +17,10 @@
 - 转译用 vite，bundle 锁定 **CommonJS + ES5**；禁 `eval` / `new Function`，`Proxy` 不可用
 - 编译/发布用**平台官方工具链**（微信 `miniprogram-ci`；抖音走 IDE/IDE CLI）
 - 小游戏产物为**双 chunk**：保证 adapter 先于引擎加载
+- 资产管线：H5 与小游戏都由 `src/build/assets.ts` 统一处理：构建结束后把工程 `assets/**` 原样镜像到产物 `assets/**`（public 目录语义），保持目录结构；当前不生成任何 manifest
+- 寻址：运行时按相对路径直接请求 `assets/<key>`，H5 以 `import.meta.env.BASE_URL` 为 base，小游戏按包内相对路径读取；构建不注入资产清单，`game.js` 不传资产选项
+- 资产目录与复制结果属于构建产物，不入库
+- 后续如需要，可在**不改变游戏侧路径 key** 的前提下追加**自动生成**的 manifest（sprite sheet 合并 / 多分辨率变体 / 哈希 / 预加载）；由构建器产出，非手写、非寻址必需
 
 ## 扩展方式
 

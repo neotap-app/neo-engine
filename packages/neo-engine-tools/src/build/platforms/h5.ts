@@ -3,6 +3,7 @@ import path from 'node:path';
 
 import { build } from 'vite';
 
+import { copyAssets } from '../assets';
 import { createTempDir, resolveEntry } from '../common';
 import type { TargetBuildOptions } from '../types';
 
@@ -13,6 +14,7 @@ const BOOTSTRAP_TS = 'h5-bootstrap.ts';
 export async function buildH5(options: TargetBuildOptions): Promise<void> {
   const { cwd, manifest, outDir } = options;
   const entryAbs = resolveEntry(manifest, cwd);
+  const outAbs = path.resolve(cwd, outDir);
   const temp = createTempDir(cwd, BOOTSTRAP_DIR);
 
   const html = [
@@ -42,7 +44,9 @@ export async function buildH5(options: TargetBuildOptions): Promise<void> {
     `}`,
     ``,
     `const runtime = createRuntime();`,
-    `const capabilities = createH5Capabilities();`,
+    `const capabilities = createH5Capabilities({`,
+    `  resource: { baseUrl: import.meta.env.BASE_URL },`,
+    `});`,
     ``,
     `void runtime.mount({`,
     `  mount: { element: mount },`,
@@ -60,10 +64,11 @@ export async function buildH5(options: TargetBuildOptions): Promise<void> {
       root: temp.dir,
       logLevel: 'warn',
       build: {
-        outDir: path.resolve(cwd, outDir),
+        outDir: outAbs,
         emptyOutDir: true,
       },
     });
+    copyAssets(cwd, outAbs);
   } finally {
     temp.dispose();
   }

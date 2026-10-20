@@ -39,8 +39,27 @@
 ```
 
 - 入口约定固定 `src/index.ts`，`export default` 一个 `NeoGameInstance`（由 SDK 提供类型）
-- 资产约定放 `assets/`，构建时默认全部打包
+- 资产约定放 `assets/`，按 public 目录语义构建时默认全部原样打包
 - 后续预留 `neo.config.mts`（类似 next.config.mts，可自定义打包步骤/插件/asset 过滤优化）——**现在不做**，见 [未来规划](#未来规划)
+
+### 资产管线（assets）
+
+- 约定：工程 `assets/**` 原样镜像到产物 `assets/**`（public 目录行为，保持目录结构），游戏按相对路径直接访问；**当前不生成、不手写任何 manifest**
+- 逻辑 key = 相对 `assets/` 的路径，也接受 `assets/` 与 `./assets/` 前缀，如 `textures/plant.png`、`assets/textures/plant.png`、`./assets/textures/plant.png` 等价
+- key 只允许相对路径：空 key、`..` 穿越、绝对 URL/协议、`/` 或 `//` 开头的路径一律拒绝
+- 运行时：`ctx.load` 即 `IResource`
+  ```ts
+  await ctx.load.loadText('data/config.txt');
+  const buf = await ctx.load.loadBinary('data/save.bin');
+  const image = await ctx.load.loadImage('textures/plant.png');
+  const json = await ctx.load.load<SceneData>('data/scene.json');
+  const source = ctx.load.resolve('audio/bgm.mp3');
+  ```
+- H5：URL = `joinAssetUrl(baseUrl, assetPath(key))`，bootstrap 传入 `baseUrl: import.meta.env.BASE_URL`；文本/二进制/JSON 走 `fetch`，图片走 `new Image()`
+- 小游戏：key 解析为 `{ kind: 'local', path: 'assets/...' }`；文本/二进制优先 `getFileSystemManager().readFileSync` 读包内文件，显式配置 `baseUrl` 时才退回 `request`；图片走 `api.createImage` / 全局 `createImage`，不可用时明确 reject
+- 音频不在 `IResource` 内：用 `resolve(key)` 取得来源后交给 `IAudio` 播放
+- 未来若需要，可追加**自动生成**的资产 manifest 作为可选元数据（sprite sheet 合并 / 多分辨率变体 / 哈希 / 预加载），由构建器产出，**非手写、非寻址必需**，游戏侧仍按上述路径 key 访问
+
 
 ### manifest（`package.neo.json`，仅 4 字段）
 
@@ -94,7 +113,7 @@ packages/neo-engine/src/          # @neotap.app/neo-engine：客户端 SDK 运�
 
 packages/neo-engine-tools/src/    # @neotap.app/neo-engine-tools：构建工具 + CLI（Node 侧，依赖 SDK）
   build/
-    index.ts  types.ts  common.ts
+    index.ts  types.ts  common.ts  assets.ts
     platforms/                    # 平台特定构建
       h5.ts  wechat.ts  douyin.ts  minigame.ts（小游戏共享：双 chunk 保证 adapter 先于引擎）
   cli/
@@ -118,7 +137,7 @@ packages/neo-engine-tools/src/    # @neotap.app/neo-engine-tools：构建工具 
 
 - 能力接口 + 每平台实现（`h5` / `wechat` / `douyin` / …）+ 能力降级（无实现则 no-op）
 - 首期仅实现：`IStorage`（本地存储）、`IAudio`（音频播放）
-- 引擎必需接口随外壳：`IResource`（资源加载）、`IPointer`/输入、`ILifecycle`（前后台/onShow/onHide）、渲染上下文
+- 引擎必需接口随外壳：`IResource`（资源寻址 + JSON/文本/二进制/图片加载）、`IPointer`/输入、`ILifecycle`（前后台/onShow/onHide）、渲染上下文
 - 环境信息：`ISystem`（`getEnvironmentInfo` → 平台 + 运行时 + 设备信息）；屏幕信息：`IScreen`（屏幕尺寸/像素比/安全区、获取/监听/取消监听方向、能否及请求主动改方向）
 - 游戏脚本只依赖接口，禁止直接用 `window` / `wx` / `tt` 全局
 - 预留扩展点（后补不改架构）：震动 / 分享 / 埋点 / 广告 / 支付 / 登录 / 网络请求

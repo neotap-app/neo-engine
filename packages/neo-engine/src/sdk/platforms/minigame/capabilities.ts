@@ -2,16 +2,20 @@ import type { IStorage } from '../../types/game-context/storage';
 import type { IAudio, AudioPlayOptions } from '../../types/game-context/audio';
 import type { IInput, PointerEventData } from '../../types/game-context/input';
 import type { ILifecycle } from '../../types/game-context/lifecycle';
-import type { IResource, ResourceSource } from '../../types/game-context/resource';
+import {
+  assetPath,
+  joinAssetUrl,
+  type IResource,
+  type ResourceSource,
+} from '../../types/game-context/resource';
 import type { IScreen, Orientation, SafeArea, ScreenInfo } from '../../types/game-context/screen';
 import type { DeviceInfo, EnvironmentInfo, ISystem, PlatformName } from '../../types/game-context/system';
-import type { MinigameAPI, MinigameInnerAudio, MinigameSystemInfo, MinigameTouchEvent } from './api';
+import type { MinigameAPI, MinigameImage, MinigameInnerAudio, MinigameSystemInfo, MinigameTouchEvent } from './api';
 
 export interface MinigameCapabilityOptions {
   platform?: PlatformName;
   resource?: {
     baseUrl?: string;
-    manifest?: Record<string, string>;
   };
 }
 
@@ -144,48 +148,151 @@ export function createMinigameLifecycle(api: MinigameAPI): ILifecycle {
 
 export function createMinigameResource(api: MinigameAPI, options: MinigameCapabilityOptions = {}): IResource {
   const baseUrl = options.resource?.baseUrl ?? '';
-  const manifest = options.resource?.manifest ?? {};
+
+  const pathFor = (key: string): string | null => assetPath(key);
+
+  const loadText = async (key: string): Promise<string> => {
+    const filePath = pathFor(key);
+    if (!filePath) {
+      throw new Error(`invalid resource key: ${key}`);
+    }
+    const fileSystem = api.getFileSystemManager?.();
+    if (fileSystem) {
+      try {
+        const data = fileSystem.readFileSync(filePath, 'utf8');
+        if (typeof data === 'string') {
+          return data;
+        }
+      } catch {}
+    }
+    if (baseUrl) {
+      const data = await requestData(api, joinAssetUrl(baseUrl, filePath), 'text');
+      if (typeof data === 'string') {
+        return data;
+      }
+    }
+    throw new Error(`failed to load text asset ${key}: local read unavailable`);
+  };
+
+  const loadBinary = async (key: string): Promise<ArrayBuffer> => {
+    const filePath = pathFor(key);
+    if (!filePath) {
+      throw new Error(`invalid resource key: ${key}`);
+    }
+    const fileSystem = api.getFileSystemManager?.();
+    if (fileSystem) {
+      try {
+        return toArrayBuffer(fileSystem.readFileSync(filePath));
+      } catch {}
+    }
+    if (baseUrl) {
+      const data = await requestData(api, joinAssetUrl(baseUrl, filePath), 'arraybuffer');
+      return toArrayBuffer(data);
+    }
+    throw new Error(`failed to load binary asset ${key}: local read unavailable`);
+  };
+
+  const loadImage = (key: string): Promise<HTMLImageElement> => {
+    const filePath = pathFor(key);
+    if (!filePath) {
+      return Promise.reject(new Error(`invalid resource key: ${key}`));
+    }
+    const remoteSrc = baseUrl ? joinAssetUrl(baseUrl, filePath) : null;
+    return new Promise<HTMLImageElement>((resolve, reject) => {
+      const createImage = getImageFactory(api);
+      if (!createImage) {
+        reject(new Error(`image loading not supported for ${key}`));
+        return;
+      }
+      const attempt = (src: string, fallback: string | null): void => {
+        const image = createImage();
+        image.onload = () => resolve(image as unknown as HTMLImageElement);
+        image.onerror = () => {
+          if (fallback) {
+            attempt(fallback, null);
+          } else {
+            reject(new Error(`failed to load image ${key}`));
+          }
+        };
+        image.src = src;
+      };
+      attempt(filePath, remoteSrc);
+    });
+  };
 
   return {
     name: 'resource',
     available: true,
     resolve(key): ResourceSource | null {
-      const mapped = manifest[key] ?? key;
-      return { kind: 'remote', url: `${baseUrl}${mapped}` };
+      const filePath = pathFor(key);
+      return filePath ? { kind: 'local', path: filePath } : null;
     },
     async load<T>(key: string): Promise<T> {
-      const source = this.resolve(key);
-      if (!source || source.kind !== 'remote') {
-        throw new Error(`cannot load resource: ${key}`);
-      }
-      return new Promise<T>((resolve, reject) => {
-        apiRequest(api, source.url)
-          .then((text) => resolve(JSON.parse(text) as T))
-          .catch(reject);
-      });
+      return JSON.parse(await loadText(key)) as T;
     },
+    loadText,
+    loadBinary,
+    loadImage,
   };
 }
 
-function apiRequest(api: MinigameAPI, url: string): Promise<string> {
-  return new Promise<string>((resolve, reject) => {
-    const request = (api as unknown as {
-      request?: (options: {
-        url: string;
-        success: (res: { data: unknown }) => void;
-        fail: (err: unknown) => void;
-      }) => void;
-    }).request;
+function getImageFactory(api: MinigameAPI): (() => MinigameImage) | null {
+  if (typeof api.createImage === 'function') {
+    return () => api.createImage!();
+  }
+  const globalCreate = (globalThis as Record<string, unknown>).createImage;
+  if (typeof globalCreate === 'function') {
+    return () => (globalCreate as () => MinigameImage)();
+  }
+  return null;
+}
+
+function requestData(
+  api: MinigameAPI,
+  url: string,
+  responseType: 'text' | 'arraybuffer',
+): Promise<unknown> {
+  return new Promise((resolve, reject) => {
+    const request = api.request;
     if (typeof request !== 'function') {
       reject(new Error('network request not supported'));
       return;
     }
     request({
       url,
-      success: (res) => resolve(String(res.data)),
-      fail: reject,
+      method: 'GET',
+      dataType: responseType === 'text' ? 'text' : undefined,
+      responseType,
+      success: (res) => {
+        if (typeof res.statusCode === 'number' && res.statusCode >= 400) {
+          reject(new Error(`request failed: ${res.statusCode}`));
+          return;
+        }
+        resolve(res.data);
+      },
+      fail: (err) => reject(new Error(`request failed: ${describeError(err)}`)),
     });
   });
+}
+
+function toArrayBuffer(data: unknown): ArrayBuffer {
+  if (data instanceof ArrayBuffer) {
+    return data;
+  }
+  if (ArrayBuffer.isView(data)) {
+    return data.buffer.slice(data.byteOffset, data.byteOffset + data.byteLength) as ArrayBuffer;
+  }
+  throw new Error('asset data is not binary');
+}
+
+function describeError(err: unknown): string {
+  if (err instanceof Error) {
+    return err.message;
+  }
+  if (typeof err === 'object' && err !== null && 'errMsg' in err) {
+    return String((err as { errMsg: unknown }).errMsg);
+  }
+  return String(err);
 }
 
 export function createMinigameSystem(api: MinigameAPI, platform: PlatformName): ISystem {

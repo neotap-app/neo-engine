@@ -34,6 +34,27 @@ export interface MinigameCanvas {
   removeEventListener?(type: string, listener: () => void): void;
 }
 
+export interface MinigameFileSystemManager {
+  readFileSync(filePath: string, encoding?: string): string | ArrayBuffer;
+}
+
+export interface MinigameImage {
+  src: string;
+  width?: number;
+  height?: number;
+  onload?: () => void;
+  onerror?: (error: unknown) => void;
+}
+
+export interface MinigameRequestOptions {
+  url: string;
+  method?: string;
+  dataType?: string;
+  responseType?: 'text' | 'arraybuffer';
+  success?: (res: { statusCode?: number; data: unknown }) => void;
+  fail?: (error: unknown) => void;
+}
+
 export interface MinigameSafeArea {
   top: number;
   right: number;
@@ -60,7 +81,9 @@ export interface MinigameSystemInfo {
 
 export interface MinigameAPI {
   createCanvas(): MinigameCanvas;
-  createImage?(): unknown;
+  createImage?(): MinigameImage;
+  getFileSystemManager?(): MinigameFileSystemManager;
+  request?(options: MinigameRequestOptions): unknown;
   getStorageSync(key: string): unknown;
   setStorageSync(key: string, value: unknown): void;
   removeStorageSync(key: string): void;

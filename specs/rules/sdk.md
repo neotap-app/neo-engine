@@ -18,6 +18,11 @@
 - 无实现的能力一律 **no-op 降级**，接口预留扩展点（震动 / 分享 / 埋点 / 广告 / 支付 / 登录等后补，**不改架构**）
 - 新增平台 = 新增 `platforms/<platform>/` 实现 + 自动检测，不改调用方
 - 方向/屏幕信息：小游戏侧基于 `MinigameAPI` 抽象（`getSystemInfoSync` / `setDeviceOrientation` / `onDeviceOrientationChange`），方向判定以 `windowWidth`/`windowHeight` 为准（微信文档提示 iOS 横屏 `deviceOrientation` 可能不准）
+- 资源 key = 相对工程 `assets/` 的路径，也接受 `assets/` 与 `./assets/` 前缀；统一经 `types/game-context/resource.ts` 的 `normalizeAssetKey` / `assetPath` 归一化为 `assets/<路径>`
+- 资产按 public 目录语义直接寻址，**当前没有 manifest**：key 只能是对 `assets/` 的相对路径；空 key、`..` 穿越、绝对 URL/协议、`/` 或 `//` 开头一律拒绝（`assetPath` 返回 null，加载器报 `invalid resource key`）
+- `IResource` 契约：`resolve(key)` 返回平台可寻址来源（H5 为 `remote`，小游戏为 `local`）；`load<T>` 保持 JSON 语义；类型化加载固定为 `loadText` / `loadBinary` / `loadImage`，新增资产类型走扩展而非改语义
+- H5 资源：URL = `joinAssetUrl(baseUrl, assetPath(key))`，`baseUrl` 来自 `import.meta.env.BASE_URL`；文本/二进制/JSON 走 `fetch`，图片走 `new Image()`。小游戏资源：优先 `getFileSystemManager().readFileSync` 读包内相对路径；显式配置 `baseUrl` 时才退回 `request`；图片走 `api.createImage` 或全局 `createImage`，都不可用时明确 reject
+- 音频不并入 `IResource`：按 `resolve(key)` 得到来源后交给现有 `IAudio` 播放；`IResource` 不承担解码/播放职责
 
 ## 引擎外壳
 
