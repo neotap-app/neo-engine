@@ -32,6 +32,7 @@ pnpm workspace monorepo：
 - `/specs/overview/architecture.md` — 目录结构与关键模式
 - `/specs/rules/sdk.md` — SDK 客户端运行时编码规范与约束
 - `/specs/rules/tools.md` — 构建工具 + CLI 编码规范与约束
+- `/specs/rules/worktree.md` — git worktree 并行开发与审阅规范
 - `/specs/rules/spec-write-and-manage.md` — spec 编写与管理规范
 - `/specs/features/neo-engine/README.md` — 引擎需求、决策与目录结构
 - `/specs/lessons-learned/` — 踩坑经验
