@@ -23,3 +23,6 @@
 
 - `runtime/` 只做编排（加载包 / 选引擎 / 生命周期），渲染与场景逻辑交给 Phaser（2D）/ Three.js（3D）
 - 2D 与 3D **互不混合渲染**：由 `GameMode`（`'2d' | '3d'`）选择引擎，两者不共享渲染上下文
+- `createRuntime().mount()` 把 `CapabilityBundle` 的全部能力挂到 `GameContext` 供游戏脚本使用：
+  `storage` / `audio` / `input` / `lifecycle` / `load`（即 `IResource`）/ `system` / `screen`；
+  2D 与 3D 上下文共享同一份基础能力字段，新增能力必须同时加入 `GameContext` 与 runtime 的 `base`

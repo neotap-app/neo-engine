@@ -2,6 +2,8 @@ import type Phaser from 'phaser';
 import type * as THREE from 'three';
 
 import type { IAudio } from './game-context/audio';
+import type { IInput } from './game-context/input';
+import type { ILifecycle } from './game-context/lifecycle';
 import type { IScreen } from './game-context/screen';
 import type { IStorage } from './game-context/storage';
 import type { IResource } from './game-context/resource';
@@ -14,6 +16,8 @@ export interface GameContext {
   canvas: HTMLCanvasElement;
   storage: IStorage;
   audio: IAudio;
+  input: IInput;
+  lifecycle: ILifecycle;
   load: IResource;
   system: ISystem;
   screen: IScreen;

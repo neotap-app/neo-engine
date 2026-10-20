@@ -91,6 +91,8 @@ export function createRuntime(): NeoRuntime {
         canvas,
         storage: options.capabilities.storage,
         audio: options.capabilities.audio,
+        input: options.capabilities.input,
+        lifecycle: options.capabilities.lifecycle,
         load: options.capabilities.resource,
         system: options.capabilities.system,
         screen: options.capabilities.screen,
