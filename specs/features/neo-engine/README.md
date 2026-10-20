@@ -73,9 +73,12 @@
 - 构建逻辑位于 `packages/neo-engine-tools/src/build/`，暴露编程接口（**不依赖 CLI**），供平台**无头构建服务**直接调用：
   ```ts
   import { buildProject } from '@neotap.app/neo-engine-tools/build';
-  await buildProject({ cwd, target: 'h5' | 'wechat' | 'douyin', outDir });
+  await buildProject({ cwd, target: 'h5' | 'wechat' | 'douyin', outDir, base });
   ```
 - CLI 的 `build` 命令是薄壳，解析 argv 后调用 `buildProject`
+- H5 的 `base` **默认 `'./'`**（相对资源路径，根路径/子路径均可部署）；同时影响 **HTML/JS chunk URL** 与 public `assets/` 目录（P0-2 落地后 assets 原样拷贝、按同一 base 相对访问、无 manifest）
+- 子路径或 CDN 托管用 `base` / `--base` 覆盖（如 `/games/pvz`）。API 与 CLI 共用 `normalizeH5Base`：自动补尾 `/`（`/games/pvz` ≡ `/games/pvz/`，`game/` 保持相对），保留 `./`、`https://`、`//` 形态，拒绝空/纯空白
+- 该参数**仅 H5 生效**，小游戏 target 忽略
 
 ## 目录结构（SDK / Tools 两包分离）
 
@@ -108,7 +111,7 @@ packages/neo-engine-tools/src/    # @neotap.app/neo-engine-tools：构建工具 
 
 | target | 运行时 | 说明 | 状态 |
 | --- | --- | --- | --- |
-| `h5` | shared（共享宿主） | NeoTap feed 内嵌 + 独立 H5 | ✅ 已实现（独立 H5 产物 + 浏览器验证） |
+| `h5` | shared（共享宿主） | NeoTap feed 内嵌 + 独立 H5；默认相对资源路径，可用 `base` 指定子路径/CDN 前缀（同时作用于 HTML/JS chunk 与 `assets/`） | ✅ 已实现（独立 H5 产物 + 浏览器验证） |
 | `wechat` | bundled（内置运行时） | 微信小游戏包 | ✅ 已实现（game.js/game.json/project.config.json 双 chunk 产物，待真机验证） |
 | `douyin` | bundled | 抖音小游戏包 | ✅ 已实现（同上，`tt.*`） |
 
