@@ -18,6 +18,18 @@
 | `@neotap.app/neo-engine` | 客户端运行时 SDK（manifest、平台能力、`createRuntime`） |
 | `@neotap.app/neo-engine-tools` | 构建工具 + `neo` CLI（无头构建接口 `buildProject`） |
 
+## CLI
+
+在游戏工程目录（含 `package.neo.json`）运行 `neo`：
+
+| 命令 | 说明 |
+| --- | --- |
+| `neo lint` | 校验 manifest、入口与本地 import 图（禁止平台/浏览器全局、`eval`、`new Function`、`Proxy`） |
+| `neo build --target <h5\|wechat\|douyin> [--outDir <dir>]` | 构建项目 |
+| `neo dev [--port <n>] [--host <addr>]` | 启动带 HMR 的 Vite 开发服务器（默认端口 `5173`） |
+| `neo preview [--outDir <dir>] [--port <n>] [--host <addr>]` | 预览 H5 构建产物（默认 `dist`，端口 `4173`） |
+| `neo help` | 显示帮助 |
+
 ## 仓库
 
 pnpm workspace monorepo：`packages/*` 为框架，`examples/*` 为示例游戏。架构、决策与约定见 `AGENTS.md` 与 `specs/`。

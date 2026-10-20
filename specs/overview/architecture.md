@@ -20,7 +20,10 @@ packages/neo-engine-tools/src/    # @neotap.app/neo-engine-tools：构建工具 
   build/
     index.ts  types.ts  common.ts
     platforms/                    # 平台特定构建：h5 / wechat / douyin / minigame
-  cli/                            # bin.ts  index.ts  build.ts  lint.ts
+  dev/index.ts                    # Vite dev server（无头接口 startDevServer）
+  preview/index.ts                # Vite preview 静态服务（无头接口 startPreviewServer）
+  lint/index.ts                   # TypeScript AST 静态约束检查
+  cli/                            # bin.ts  index.ts  build.ts  dev.ts  preview.ts  lint.ts  serve-args.ts
 
 examples/phaser-demo/             # 示例游戏工程（原工程结构示范）
 ```
