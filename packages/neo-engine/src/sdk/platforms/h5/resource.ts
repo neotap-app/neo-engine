@@ -1,31 +1,65 @@
-import type { IResource, ResourceSource } from '../../types/game-context/resource';
+import {
+  assetPath,
+  joinAssetUrl,
+  type IResource,
+  type ResourceSource,
+} from '../../types/game-context/resource';
 
 export interface H5ResourceOptions {
   baseUrl?: string;
-  manifest?: Record<string, string>;
 }
 
 export function createH5Resource(options: H5ResourceOptions = {}): IResource {
   const baseUrl = options.baseUrl ?? '';
-  const manifest = options.manifest ?? {};
+
+  const urlFor = (key: string): string | null => {
+    const path = assetPath(key);
+    return path ? joinAssetUrl(baseUrl, path) : null;
+  };
+
+  const request = async (key: string): Promise<Response> => {
+    const url = urlFor(key);
+    if (!url) {
+      throw new Error(`invalid resource key: ${key}`);
+    }
+    const res = await fetch(url);
+    if (!res.ok) {
+      throw new Error(`failed to load resource ${key}: ${res.status}`);
+    }
+    return res;
+  };
 
   return {
     name: 'resource',
     available: true,
     resolve(key): ResourceSource | null {
-      const mapped = manifest[key] ?? key;
-      return { kind: 'remote', url: `${baseUrl}${mapped}` };
+      const url = urlFor(key);
+      return url ? { kind: 'remote', url } : null;
     },
     async load<T>(key: string): Promise<T> {
-      const source = this.resolve(key);
-      if (!source || source.kind !== 'remote') {
-        throw new Error(`cannot load resource: ${key}`);
-      }
-      const res = await fetch(source.url);
-      if (!res.ok) {
-        throw new Error(`failed to load resource ${key}: ${res.status}`);
-      }
+      const res = await request(key);
       return (await res.json()) as T;
+    },
+    async loadText(key: string): Promise<string> {
+      const res = await request(key);
+      return res.text();
+    },
+    async loadBinary(key: string): Promise<ArrayBuffer> {
+      const res = await request(key);
+      return res.arrayBuffer();
+    },
+    loadImage(key: string): Promise<HTMLImageElement> {
+      return new Promise<HTMLImageElement>((resolve, reject) => {
+        const url = urlFor(key);
+        if (!url) {
+          reject(new Error(`invalid resource key: ${key}`));
+          return;
+        }
+        const image = new Image();
+        image.onload = () => resolve(image);
+        image.onerror = () => reject(new Error(`failed to load image ${key}`));
+        image.src = url;
+      });
     },
   };
 }

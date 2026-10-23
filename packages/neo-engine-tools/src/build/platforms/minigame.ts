@@ -3,6 +3,7 @@ import path from 'node:path';
 
 import { build } from 'vite';
 
+import { copyAssets } from '../assets';
 import { createTempDir, resolveEntry } from '../common';
 import type { TargetBuildOptions } from '../types';
 
@@ -134,14 +135,4 @@ export async function buildMinigame(
   } finally {
     temp.dispose();
   }
-}
-
-function copyAssets(cwd: string, outAbs: string): void {
-  const assetsDir = path.join(cwd, 'assets');
-  if (!fs.existsSync(assetsDir)) {
-    return;
-  }
-  const dest = path.join(outAbs, 'assets');
-  fs.mkdirSync(dest, { recursive: true });
-  fs.cpSync(assetsDir, dest, { recursive: true });
 }

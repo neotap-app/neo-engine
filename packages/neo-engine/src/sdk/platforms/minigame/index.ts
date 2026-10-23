@@ -22,6 +22,7 @@ import {
 
 export * from './api';
 export * from './adapter';
+export type { MinigameCapabilityOptions } from './capabilities';
 
 export interface MinigameCapabilities extends CapabilityBundle {
   storage: IStorage;
