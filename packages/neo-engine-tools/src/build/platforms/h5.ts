@@ -3,6 +3,7 @@ import path from 'node:path';
 
 import { build } from 'vite';
 
+import { normalizeH5Base } from '../base';
 import { createTempDir, resolveEntry } from '../common';
 import type { TargetBuildOptions } from '../types';
 
@@ -12,6 +13,7 @@ const BOOTSTRAP_TS = 'h5-bootstrap.ts';
 
 export async function buildH5(options: TargetBuildOptions): Promise<void> {
   const { cwd, manifest, outDir } = options;
+  const base = normalizeH5Base(options.base);
   const entryAbs = resolveEntry(manifest, cwd);
   const temp = createTempDir(cwd, BOOTSTRAP_DIR);
 
@@ -58,6 +60,7 @@ export async function buildH5(options: TargetBuildOptions): Promise<void> {
   try {
     await build({
       root: temp.dir,
+      base,
       logLevel: 'warn',
       build: {
         outDir: path.resolve(cwd, outDir),

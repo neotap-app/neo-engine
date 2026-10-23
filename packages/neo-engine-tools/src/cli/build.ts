@@ -1,16 +1,18 @@
 import path from 'node:path';
 
-import { buildProject } from '../build';
+import { buildProject, normalizeH5Base } from '../build';
 import type { Target } from '../build';
 
 export interface ParsedBuildOptions {
   target: Target;
   outDir: string;
+  base?: string;
 }
 
 export function parseBuildArgs(argv: string[]): ParsedBuildOptions {
   let target: Target = 'h5';
   let outDir = 'dist';
+  let base: string | undefined;
 
   for (let i = 0; i < argv.length; i++) {
     const arg = argv[i];
@@ -36,12 +38,27 @@ export function parseBuildArgs(argv: string[]): ParsedBuildOptions {
       }
       outDir = value;
       i++;
+    } else if (arg.startsWith('--base=')) {
+      base = parseBase(arg.slice('--base='.length));
+    } else if (arg === '--base') {
+      if (i + 1 >= argv.length) {
+        throw new Error('--base requires a non-empty value');
+      }
+      base = parseBase(argv[i + 1]);
+      i++;
     } else {
       throw new Error(`unknown argument: ${arg}`);
     }
   }
 
-  return { target, outDir };
+  return { target, outDir, base };
+}
+
+function parseBase(value: string): string {
+  if (value.trim() === '') {
+    throw new Error('--base requires a non-empty value');
+  }
+  return normalizeH5Base(value);
 }
 
 function parseTarget(value: string): Target {
@@ -57,5 +74,6 @@ export async function buildProjectCLI(cwd: string, argv: string[]): Promise<void
     cwd: path.resolve(cwd),
     target: args.target,
     outDir: args.outDir,
+    base: args.base,
   });
 }
