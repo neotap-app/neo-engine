@@ -31,3 +31,4 @@
 - `createRuntime().mount()` 把 `CapabilityBundle` 的全部能力挂到 `GameContext` 供游戏脚本使用：
   `storage` / `audio` / `input` / `lifecycle` / `load`（即 `IResource`）/ `system` / `screen`；
   2D 与 3D 上下文共享同一份基础能力字段，新增能力必须同时加入 `GameContext` 与 runtime 的 `base`
+- manifest 由引导方通过 `RuntimeOptions.manifest` 注入，运行时原样挂到 `GameContext.manifest`（2D / 3D 一致，未注入为 `null`）

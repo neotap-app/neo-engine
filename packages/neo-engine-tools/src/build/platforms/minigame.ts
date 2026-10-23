@@ -56,8 +56,8 @@ export async function buildMinigame(
   fs.writeFileSync(
     gameEntry,
     [
-      `import { createRuntime } from '@neotap.app/neo-engine';`,
-      `export { createRuntime };`,
+      `import { createRuntime, NeoManifest } from '@neotap.app/neo-engine';`,
+      `export { createRuntime, NeoManifest };`,
       `export { default } from ${JSON.stringify(entryAbs)};`,
       ``,
     ].join('\n'),
@@ -91,6 +91,8 @@ export async function buildMinigame(
       },
     });
 
+    const manifestLiteral = JSON.stringify(manifest.toJSON());
+
     const gameJs = [
       `// Neo Engine minigame entry (${info.namespace})`,
       `// Install DOM shim adapter BEFORE any engine/game code evaluates`,
@@ -102,11 +104,13 @@ export async function buildMinigame(
       `var env = runtime.installMinigame(detected);`,
       `var core = require('./game-core.js');`,
       ``,
+      `var manifest = core.NeoManifest.fromObject(${manifestLiteral});`,
       `var rt = core.createRuntime();`,
       `rt.mount({`,
       `  mount: { element: env.canvas },`,
       `  capabilities: env.capabilities,`,
       `  canvas: env.canvas,`,
+      `  manifest: manifest,`,
       `  loadInstance: function () { return Promise.resolve(core.default || core); },`,
       `}).catch(function (err) {`,
       `  console.error('[neo-engine] mount failed', err);`,
