@@ -33,6 +33,8 @@
 ## 开发回路（dev / preview）
 
 - `neo dev`：在工程内创建 `.neo-dev/<pid>-<timestamp>/` 临时根目录，写入 `index.html` + bootstrap（复用 H5 bootstrap，import manifest 入口的绝对路径），启动 Vite dev server
+  - 同步复制工程 `assets/**` 到临时根目录，dev 下按 public 目录语义直接请求 `assets/**`
+  - bootstrap 注入 `NeoManifest`，并以 `baseUrl: './'` 创建 H5 能力，保证 dev 与 H5 产物的资源/清单行为一致
   - 监听入口所在目录与工程 `src/`，源码变更走 Vite HMR / 刷新
   - `--port <n>`（默认 5173，被占用时由 Vite 顺延）、`--host <addr>`（默认 `localhost`；裸 `--host` = `0.0.0.0`）
   - 启动后打印 `neo dev listening at <url>`；SIGINT / SIGTERM / SIGBREAK / SIGHUP / 正常退出时删除临时目录（进程被强杀时无法执行清理）

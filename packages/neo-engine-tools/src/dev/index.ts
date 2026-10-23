@@ -5,6 +5,7 @@ import path from 'node:path';
 import { createServer } from 'vite';
 import type { ViteDevServer } from 'vite';
 
+import { copyAssets } from '../build/assets';
 import { readManifest, resolveEntry } from '../build/common';
 
 const DEV_DIR = '.neo-dev';
@@ -34,10 +35,12 @@ export async function startDevServer(options: DevServerOptions): Promise<DevServ
 
   const dir = path.join(cwd, DEV_DIR, `${process.pid}-${Date.now()}`);
   fs.mkdirSync(dir, { recursive: true });
+  copyAssets(cwd, dir);
   pruneStaleDevDirs(cwd, dir);
   const dispose = () => disposeDevDir(dir);
 
   const entrySpecifier = toImportSpecifier(entryAbs);
+  const manifestLiteral = JSON.stringify(manifest.toJSON());
 
   const html = [
     `<!doctype html>`,
@@ -57,8 +60,10 @@ export async function startDevServer(options: DevServerOptions): Promise<DevServ
   ].join('\n');
 
   const bootstrap = [
-    `import { createH5Capabilities, createRuntime } from '@neotap.app/neo-engine';`,
+    `import { createH5Capabilities, createRuntime, NeoManifest } from '@neotap.app/neo-engine';`,
     `import entry from ${JSON.stringify(entrySpecifier)};`,
+    ``,
+    `const manifest = NeoManifest.fromObject(${manifestLiteral});`,
     ``,
     `const mount = document.getElementById('game');`,
     `if (!mount) {`,
@@ -66,11 +71,14 @@ export async function startDevServer(options: DevServerOptions): Promise<DevServ
     `}`,
     ``,
     `const runtime = createRuntime();`,
-    `const capabilities = createH5Capabilities();`,
+    `const capabilities = createH5Capabilities({`,
+    `  resource: { baseUrl: './' },`,
+    `});`,
     ``,
     `void runtime.mount({`,
     `  mount: { element: mount },`,
     `  capabilities,`,
+    `  manifest,`,
     `  loadInstance: async () => entry,`,
     `});`,
     ``,
