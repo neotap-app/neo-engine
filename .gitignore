@@ -25,6 +25,7 @@ dist/
 out/
 *.tsbuildinfo
 .neo-build/
+.neo-dev/
 
 # Logs / OS
 *.log

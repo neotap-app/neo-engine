@@ -18,6 +18,18 @@ A lightweight, cross-platform **JavaScript / TypeScript game framework** built o
 | `@neotap.app/neo-engine` | Client runtime SDK (manifest, platform capabilities, `createRuntime`) |
 | `@neotap.app/neo-engine-tools` | Build tools + `neo` CLI (headless `buildProject` API) |
 
+## CLI
+
+Run `neo` in a game project directory (contains `package.neo.json`):
+
+| Command | Description |
+| --- | --- |
+| `neo lint` | Validate the manifest, entry, and local import graph (forbidden platform/browser globals, `eval`, `new Function`, `Proxy`) |
+| `neo build --target <h5\|wechat\|douyin> [--outDir <dir>]` | Build the project |
+| `neo dev [--port <n>] [--host <addr>]` | Start a Vite dev server with HMR (default port `5173`) |
+| `neo preview [--outDir <dir>] [--port <n>] [--host <addr>]` | Serve an H5 build output (default `dist`, port `4173`) |
+| `neo help` | Show help |
+
 ## Repository
 
 pnpm workspace monorepo: `packages/*` for the framework, `examples/*` for sample games. See `AGENTS.md` and `specs/` for architecture, decisions, and conventions.

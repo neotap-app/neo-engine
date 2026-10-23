@@ -54,6 +54,9 @@ importers:
       '@neotap.app/neo-engine':
         specifier: workspace:*
         version: link:../neo-engine
+      typescript:
+        specifier: ^5.5.0
+        version: 5.9.3
       vite:
         specifier: ^8.3.2
         version: 8.3.4(@types/node@20.19.43)(esbuild@0.27.7)
@@ -67,9 +70,6 @@ importers:
       tsup:
         specifier: ^8.0.0
         version: 8.5.1(postcss@8.5.30)(typescript@5.9.3)
-      typescript:
-        specifier: ^5.5.0
-        version: 5.9.3
 
 packages:
 
