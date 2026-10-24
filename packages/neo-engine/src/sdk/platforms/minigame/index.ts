@@ -36,15 +36,16 @@ export interface MinigameCapabilities extends CapabilityBundle {
 
 export function createMinigameCapabilities(api: MinigameAPI, options: MinigameCapabilityOptions = {}): MinigameCapabilities {
   const platform = options.platform ?? detectMinigameAPI()?.namespace ?? 'wechat';
+  const resource = createMinigameResource(api, options);
   return {
     storage: createMinigameStorage(api, {
       ...options.storage,
       namespace: options.storage?.namespace ?? options.manifest?.name,
     }),
-    audio: createMinigameAudio(api),
+    audio: createMinigameAudio(api, { resource }),
     input: createMinigameInput(api),
     lifecycle: createMinigameLifecycle(api),
-    resource: createMinigameResource(api, options),
+    resource,
     system: createMinigameSystem(api, platform),
     screen: createMinigameScreen(api),
   };

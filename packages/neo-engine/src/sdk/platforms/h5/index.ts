@@ -33,15 +33,16 @@ export interface H5Capabilities extends CapabilityBundle {
 }
 
 export function createH5Capabilities(options: H5CapabilityOptions = {}): H5Capabilities {
+  const resource = createH5Resource(options.resource);
   return {
     storage: createH5Storage({
       ...options.storage,
       namespace: options.storage?.namespace ?? options.manifest?.name,
     }),
-    audio: createH5Audio(),
+    audio: createH5Audio({ resource }),
     input: createH5Input(options.input),
     lifecycle: createH5Lifecycle(),
-    resource: createH5Resource(options.resource),
+    resource,
     system: createH5System(),
     screen: createH5Screen(),
   };
