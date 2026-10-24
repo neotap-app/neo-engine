@@ -335,38 +335,50 @@ export function createMinigameAudio(
   };
 }
 
-function toPointer(event: MinigameTouchEvent): PointerEventData | null {
-  const touch = event.touches[0] ?? event.changedTouches[0];
-  if (!touch) {
-    return null;
-  }
-  return { x: touch.clientX, y: touch.clientY };
+type MinigamePointerType = 'down' | 'move' | 'up' | 'cancel';
+type MinigamePointerListener = (event: PointerEventData) => void;
+
+function toPointers(event: MinigameTouchEvent): PointerEventData[] {
+  const touches = event.changedTouches.length > 0 ? event.changedTouches : event.touches;
+  return touches.map((touch, index) => ({
+    x: touch.clientX,
+    y: touch.clientY,
+    pointerId: touch.identifier ?? index,
+    pointerType: 'touch',
+    isPrimary: index === 0,
+    inside: true,
+  }));
 }
 
 export function createMinigameInput(api: MinigameAPI): IInput {
-  const listeners: Record<string, Array<(event: PointerEventData) => void>> = {
+  const listeners: Record<MinigamePointerType, MinigamePointerListener[]> = {
     down: [],
     move: [],
     up: [],
+    cancel: [],
   };
 
-  const emit = (type: keyof typeof listeners) => (event: MinigameTouchEvent) => {
-    const data = toPointer(event);
-    if (!data) {
+  const emit = (type: MinigamePointerType) => (event: MinigameTouchEvent) => {
+    const pointers = toPointers(event);
+    if (pointers.length === 0) {
       return;
     }
-    listeners[type].forEach((fn) => fn(data));
+    listeners[type].slice().forEach((fn) => {
+      pointers.forEach((data) => fn(data));
+    });
   };
 
   const handlers = {
     down: emit('down'),
     move: emit('move'),
     up: emit('up'),
+    cancel: emit('cancel'),
   };
 
   let downAttached = false;
   let moveAttached = false;
   let upAttached = false;
+  let cancelAttached = false;
 
   const attach = () => {
     if (!downAttached) {
@@ -380,6 +392,10 @@ export function createMinigameInput(api: MinigameAPI): IInput {
     if (!upAttached) {
       api.onTouchEnd(handlers.up);
       upAttached = true;
+    }
+    if (!cancelAttached && api.onTouchCancel) {
+      api.onTouchCancel(handlers.cancel);
+      cancelAttached = true;
     }
   };
 
@@ -404,18 +420,71 @@ export function createMinigameInput(api: MinigameAPI): IInput {
         api.offTouchEnd(handlers.up);
         upAttached = false;
       }
+      if (cancelAttached && api.offTouchCancel) {
+        api.offTouchCancel(handlers.cancel);
+        cancelAttached = false;
+      }
       listeners.down.length = 0;
       listeners.move.length = 0;
       listeners.up.length = 0;
+      listeners.cancel.length = 0;
     },
     onPointerDown(listener) {
       listeners.down.push(listener);
     },
+    offPointerDown(listener) {
+      const index = listeners.down.indexOf(listener);
+      if (index >= 0) {
+        listeners.down.splice(index, 1);
+      }
+    },
     onPointerMove(listener) {
       listeners.move.push(listener);
     },
+    offPointerMove(listener) {
+      const index = listeners.move.indexOf(listener);
+      if (index >= 0) {
+        listeners.move.splice(index, 1);
+      }
+    },
     onPointerUp(listener) {
       listeners.up.push(listener);
+    },
+    offPointerUp(listener) {
+      const index = listeners.up.indexOf(listener);
+      if (index >= 0) {
+        listeners.up.splice(index, 1);
+      }
+    },
+    onPointerCancel(listener) {
+      if (!api.onTouchCancel) {
+        return;
+      }
+      listeners.cancel.push(listener);
+    },
+    offPointerCancel(listener) {
+      const index = listeners.cancel.indexOf(listener);
+      if (index >= 0) {
+        listeners.cancel.splice(index, 1);
+      }
+    },
+    onWheel() {
+      return;
+    },
+    offWheel() {
+      return;
+    },
+    onKeyDown() {
+      return;
+    },
+    offKeyDown() {
+      return;
+    },
+    onKeyUp() {
+      return;
+    },
+    offKeyUp() {
+      return;
     },
   };
 }
