@@ -44,7 +44,7 @@
 
 ### 资产管线（assets）
 
-- 约定：工程 `assets/**` 原样镜像到产物 `assets/**`（public 目录行为，保持目录结构），游戏按相对路径直接访问；**当前不生成、不手写任何 manifest**
+- 约定：工程 `assets/**` 原样镜像到产物 `assets/**`（public 目录行为，保持目录结构），游戏按相对路径直接访问；构建期**自动生成** `assets-manifest.json` 与 `.neo/assets.d.ts`（不手写），但游戏侧仍按路径 key 访问
 - 逻辑 key = 相对 `assets/` 的路径，也接受 `assets/` 与 `./assets/` 前缀，如 `textures/plant.png`、`assets/textures/plant.png`、`./assets/textures/plant.png` 等价
 - key 只允许相对路径：空 key、`..` 穿越、绝对 URL/协议、`/` 或 `//` 开头的路径一律拒绝
 - 运行时：`ctx.load` 即 `IResource`
@@ -57,8 +57,9 @@
   ```
 - H5：URL = `joinAssetUrl(baseUrl, assetPath(key))`，bootstrap 传入 `baseUrl: import.meta.env.BASE_URL`；文本/二进制/JSON 走 `fetch`，图片走 `new Image()`
 - 小游戏：key 解析为 `{ kind: 'local', path: 'assets/...' }`；文本/二进制优先 `getFileSystemManager().readFileSync` 读包内文件，显式配置 `baseUrl` 时才退回 `request`；图片走 `api.createImage` / 全局 `createImage`，不可用时明确 reject
-- 音频不在 `IResource` 内：用 `resolve(key)` 取得来源后交给 `IAudio` 播放
-- 未来若需要，可追加**自动生成**的资产 manifest 作为可选元数据（sprite sheet 合并 / 多分辨率变体 / 哈希 / 预加载），由构建器产出，**非手写、非寻址必需**，游戏侧仍按上述路径 key 访问
+- 音频不在 `IResource` 内：`IAudio` 用 `resolve(key)` 取得来源，支持 `preload(key)` 与 `play(key, options): AudioHandle`（每次播放独立实例，可并发/重启，带 `onEnded` / `onError`）
+- 构建期校验代码中的字面量资产 key：未知 key 让 `neo lint` 与 `buildProject` 直接失败（`file:line:col`），不再等到运行时 404；详见 [asset-pipeline.md](/specs/features/neo-engine/asset-pipeline.md)
+- 已生成：`assets-manifest.json`（`{ version, assets: [{ key, size, hash }] }`）与 `.neo/assets.d.ts` 的 `NeoAssetKey` 联合类型。后续可在此基础上追加 sprite sheet 合并 / 多分辨率变体 / 预加载（非寻址必需）
 
 
 ### manifest（`package.neo.json`，仅 4 字段）
@@ -142,12 +143,13 @@ packages/neo-engine-tools/src/    # @neotap.app/neo-engine-tools：构建工具 
 
 - 能力接口 + 每平台实现（`h5` / `wechat` / `douyin` / …）+ 能力降级（无实现则 no-op）
 - 首期仅实现：`IStorage`（本地存储）、`IAudio`（音频播放）
-- 引擎必需接口随外壳：`IResource`（资源寻址 + JSON/文本/二进制/图片加载）、`IPointer`/输入、`ILifecycle`（前后台/onShow/onHide）、渲染上下文
+- 引擎必需接口随外壳：`IResource`（资源寻址 + JSON/文本/二进制/图片加载，`loadImage` 返回平台无关 `IImage`）、`IInput`（指针/多点/滚轮/键盘 + `off*` 解绑）、`ILifecycle`（前后台/onShow/onHide）、渲染上下文
+- 音频：`IAudio` 通过 `IResource.resolve` 寻址，支持 `preload`、每次 `play` 返回 `AudioHandle`（可并发/重启，带结束与错误回调）、`setMasterVolume` / `setMuted` / 首次手势 `unlock`
 - 环境信息：`ISystem`（`getEnvironmentInfo` → 平台 + 运行时 + 设备信息）；屏幕信息：`IScreen`（屏幕尺寸/像素比/安全区、获取/监听/取消监听方向、能否及请求主动改方向）
 - 游戏脚本只依赖接口，禁止直接用 `window` / `wx` / `tt` 全局
 - 能力生命周期：`Capability` 可选 `bind({ canvas, game })` / `dispose()`；runtime 创建 canvas（2D 含 `Phaser.Game`）后统一 bind，`unmount` 依次取消 3D RAF / 生命周期订阅、dispose 所有能力、销毁实例与 Phaser game、释放 3D renderer、移除 canvas 并复位状态（幂等、可反复 mount/unmount）
 - `ILifecycle` 提供 `onShow`/`offShow`、`onHide`/`offHide`；mount 后订阅，隐藏暂停（2D `game.loop.pause()`，3D 停止 RAF）、显示恢复
-- 输入坐标：H5 绑定 canvas，按 `getBoundingClientRect()` 与画布内部分辨率换算，兼容 `Scale.FIT` 缩放/居中；`H5InputOptions.target` 仅作独立使用入口
+- 输入坐标：H5 绑定 canvas，按 `getBoundingClientRect()` 与画布内部分辨率换算，兼容 `Scale.FIT` 缩放/居中；`H5InputOptions.target` 仅作独立使用入口。支持 `pointerId` 多点、`pointercancel`、滚轮、键盘（H5 `window`）与全部 `off*` 解绑；小游戏无键盘/滚轮时降级为 no-op
 - 存储命名空间：实现按 `neo:<namespace>:` 隔离，namespace 由 manifest 名称编码派生（缺省 `game`）；`clear()` 只清当前 namespace，小游戏拿不到 key 列表时不清空全部存储
 - 错误边界：`RuntimeOptions.onError` 接收 mount 失败；生成的引导代码统一 `.catch` 上报（`console.error` + `neo:error` 事件 + 可见兜底文案），并监听 `error` / `unhandledrejection`
 - 预留扩展点（后补不改架构）：震动 / 分享 / 埋点 / 广告 / 支付 / 登录 / 网络请求

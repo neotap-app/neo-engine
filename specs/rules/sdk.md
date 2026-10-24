@@ -19,12 +19,14 @@
 - 新增平台 = 新增 `platforms/<platform>/` 实现 + 自动检测，不改调用方
 - 方向/屏幕信息：小游戏侧基于 `MinigameAPI` 抽象（`getSystemInfoSync` / `setDeviceOrientation` / `onDeviceOrientationChange`），方向判定以 `windowWidth`/`windowHeight` 为准（微信文档提示 iOS 横屏 `deviceOrientation` 可能不准）
 - 资源 key = 相对工程 `assets/` 的路径，也接受 `assets/` 与 `./assets/` 前缀；统一经 `types/game-context/resource.ts` 的 `normalizeAssetKey` / `assetPath` 归一化为 `assets/<路径>`
-- 资产按 public 目录语义直接寻址，**当前没有 manifest**：key 只能是对 `assets/` 的相对路径；空 key、`..` 穿越、绝对 URL/协议、`/` 或 `//` 开头一律拒绝（`assetPath` 返回 null，加载器报 `invalid resource key`）
+- 资产按 public 目录语义直接寻址：key 只能是对 `assets/` 的相对路径；空 key、`..` 穿越、绝对 URL/协议、`/` 或 `//` 开头一律拒绝（`assetPath` 返回 null，加载器报 `invalid resource key`）。构建期可生成 `assets-manifest.json` 与 `.neo/assets.d.ts` 作为可选元数据/类型，**不是寻址必需**（见 `specs/features/neo-engine/asset-pipeline.md`）
 - `IResource` 契约：`resolve(key)` 返回平台可寻址来源（H5 为 `remote`，小游戏为 `local`）；`load<T>` 保持 JSON 语义；类型化加载固定为 `loadText` / `loadBinary` / `loadImage`，新增资产类型走扩展而非改语义
-- H5 资源：URL = `joinAssetUrl(baseUrl, assetPath(key))`，`baseUrl` 来自 `import.meta.env.BASE_URL`；文本/二进制/JSON 走 `fetch`，图片走 `new Image()`。小游戏资源：优先 `getFileSystemManager().readFileSync` 读包内相对路径；显式配置 `baseUrl` 时才退回 `request`；图片走 `api.createImage` 或全局 `createImage`，都不可用时明确 reject
-- 音频不并入 `IResource`：按 `resolve(key)` 得到来源后交给现有 `IAudio` 播放；`IResource` 不承担解码/播放职责
+- `loadImage` 返回平台无关 `IImage`（`{ key, source, width, height, url?, dispose? }`），**不返回 `HTMLImageElement`**；`source` 为平台原生图片对象，游戏按目标平台自行断言或走引擎抽象
+- H5 资源：URL = `joinAssetUrl(baseUrl, assetPath(key))`，`baseUrl` 来自 `import.meta.env.BASE_URL`；文本/二进制/JSON 走 `fetch`，图片走 `new Image()` 并包成 `IImage`。小游戏资源：优先 `getFileSystemManager().readFileSync` 读包内相对路径；显式配置 `baseUrl` 时才退回 `request`；图片走 `api.createImage` 或全局 `createImage` 并包成 `IImage`，不可用时明确 reject
+- 音频不并入 `IResource`：`IAudio` 通过 `IResource.resolve(key)` 取得来源，提供 `preload(key)`、`play(key, options): AudioHandle`（并发/重启/结束与错误回调）、`setMasterVolume` / `setMuted` / `unlock`；`IResource` 不承担解码/播放职责（见 `specs/features/neo-engine/resource-audio.md`）
 - 存储命名空间：key 统一为 `neo:<namespace>:<key>`；`<namespace>` 由 manifest 派生（优先 `manifest.name`，缺省 `'game'`）并用 `encodeURIComponent` 编码，避免中文/特殊字符碰撞；`prefix` 仍可由调用方覆盖。`clear()` 只删除当前 namespace 前缀的 key；小游戏端拿不到 `getStorageInfoSync().keys` 时宁可不删，**禁止**调用 `clearStorageSync()` 清空整个小游戏存储
 - 输入坐标：H5 `IInput` 绑定 canvas（`IInput.bind` / `H5InputOptions.target` 兼容独立使用）；以 `canvas.getBoundingClientRect()` 换算 `x = (clientX - rect.left) * canvas.width / rect.width`（y 同理），`rect.width` / `rect.height` 为 0 时回退 `canvas.width` / `canvas.height`，保证 `Scale.FIT` 缩放 + 居中下仍是画布内坐标
+- 输入能力：`PointerEventData` 含 `pointerId` / `pointerType` / `isPrimary` / `inside`，支持多点与 `pointercancel`；另有 `onWheel` 与 `onKeyDown` / `onKeyUp`。所有 `on*` 都配套 `off*` 解绑，`dispose()` 清理全部监听。小游戏无键盘/滚轮能力时对应注册为 no-op（见 `specs/features/neo-engine/input.md`）
 
 ## 能力生命周期与宿主清理
 
