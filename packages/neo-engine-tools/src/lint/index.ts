@@ -4,7 +4,10 @@ import path from 'node:path';
 import { NeoManifest } from '@neotap.app/neo-engine';
 import ts from 'typescript';
 
+import { collectAssets } from '../build/assets';
 import { readManifest } from '../build/common';
+import { collectAssetKeyErrors } from './asset-keys';
+import { collectLocalImportGraph, toRelative } from './graph';
 
 export interface LintResult {
   ok: boolean;
@@ -21,10 +24,6 @@ const FORBIDDEN_GLOBALS = new Set([
   'tt',
   'Proxy',
 ]);
-
-const RESOLVE_EXTENSIONS = ['.ts', '.tsx', '.mts', '.cts', '.js', '.jsx', '.mjs', '.cjs', '.json'];
-const LINT_EXTENSIONS = new Set(['.ts', '.tsx', '.mts', '.cts', '.js', '.jsx', '.mjs', '.cjs']);
-const EXCLUDED_TOP_LEVEL_DIRS = new Set(['node_modules', 'dist', 'out', '.neo-build', '.neo-dev']);
 
 export async function lintProject(cwd: string): Promise<LintResult> {
   const errors: string[] = [];
@@ -49,43 +48,13 @@ export async function lintProject(cwd: string): Promise<LintResult> {
     return { ok: false, errors, warnings };
   }
 
-  const visited = new Set<string>();
-  const queue = [entryPath];
+  const graph = collectLocalImportGraph(root, entryPath);
+  errors.push(...graph.errors);
 
-  while (queue.length > 0) {
-    const file = queue.shift() as string;
-    if (visited.has(file)) {
-      continue;
-    }
-    visited.add(file);
-
-    let text: string;
-    try {
-      text = fs.readFileSync(file, 'utf-8');
-    } catch (err) {
-      errors.push(`${toRelative(root, file)}: cannot read file (${err instanceof Error ? err.message : String(err)})`);
-      continue;
-    }
-
-    const source = ts.createSourceFile(
-      file,
-      text,
-      ts.ScriptTarget.Latest,
-      true,
-      scriptKindFor(file),
-    );
-
+  const available = new Set(collectAssets(cwd).map((asset) => asset.key));
+  for (const { source } of graph.files) {
     collectForbiddenUsage(source, root, errors);
-
-    for (const specifier of collectLocalSpecifiers(source)) {
-      const resolved = resolveLocalImport(file, specifier);
-      if (!resolved || isExcluded(resolved, root) || visited.has(resolved)) {
-        continue;
-      }
-      if (LINT_EXTENSIONS.has(path.extname(resolved).toLowerCase())) {
-        queue.push(resolved);
-      }
-    }
+    errors.push(...collectAssetKeyErrors(source, root, available));
   }
 
   return { ok: errors.length === 0, errors, warnings };
@@ -188,100 +157,4 @@ function isGlobalReference(node: ts.Identifier): boolean {
   }
 
   return true;
-}
-
-function collectLocalSpecifiers(source: ts.SourceFile): string[] {
-  const specifiers: string[] = [];
-
-  const visit = (node: ts.Node): void => {
-    if (ts.isImportDeclaration(node)) {
-      const clause = node.importClause;
-      if (!clause?.isTypeOnly && ts.isStringLiteralLike(node.moduleSpecifier)) {
-        specifiers.push(node.moduleSpecifier.text);
-      }
-    } else if (ts.isExportDeclaration(node)) {
-      if (!node.isTypeOnly && node.moduleSpecifier && ts.isStringLiteralLike(node.moduleSpecifier)) {
-        specifiers.push(node.moduleSpecifier.text);
-      }
-    } else if (
-      ts.isCallExpression(node) &&
-      node.expression.kind === ts.SyntaxKind.ImportKeyword &&
-      node.arguments.length > 0 &&
-      ts.isStringLiteralLike(node.arguments[0])
-    ) {
-      specifiers.push((node.arguments[0] as ts.StringLiteralLike).text);
-    }
-
-    ts.forEachChild(node, visit);
-  };
-
-  visit(source);
-  return specifiers;
-}
-
-function resolveLocalImport(fromFile: string, specifier: string): string | null {
-  let base: string;
-  if (specifier.startsWith('.')) {
-    base = path.resolve(path.dirname(fromFile), specifier);
-  } else if (path.isAbsolute(specifier)) {
-    base = specifier;
-  } else {
-    return null;
-  }
-
-  const candidates: string[] = [base];
-  const ext = path.extname(base);
-  if (ext) {
-    const stem = base.slice(0, -ext.length);
-    for (const replacement of ['.ts', '.tsx', '.mts', '.cts']) {
-      candidates.push(stem + replacement);
-    }
-  }
-  for (const candidateExt of RESOLVE_EXTENSIONS) {
-    candidates.push(base + candidateExt);
-    candidates.push(path.join(base, `index${candidateExt}`));
-  }
-
-  for (const candidate of candidates) {
-    try {
-      if (fs.statSync(candidate).isFile()) {
-        return candidate;
-      }
-    } catch {
-      // Try the next candidate.
-    }
-  }
-
-  return null;
-}
-
-function isExcluded(file: string, root: string): boolean {
-  const relative = path.relative(root, file);
-  const segments = relative.split(path.sep);
-  if (segments.includes('node_modules')) {
-    return true;
-  }
-  if (relative.startsWith('..') || path.isAbsolute(relative)) {
-    return false;
-  }
-  return EXCLUDED_TOP_LEVEL_DIRS.has(segments[0]);
-}
-
-function scriptKindFor(file: string): ts.ScriptKind {
-  switch (path.extname(file).toLowerCase()) {
-    case '.tsx':
-      return ts.ScriptKind.TSX;
-    case '.jsx':
-      return ts.ScriptKind.JSX;
-    case '.js':
-    case '.mjs':
-    case '.cjs':
-      return ts.ScriptKind.JS;
-    default:
-      return ts.ScriptKind.TS;
-  }
-}
-
-function toRelative(root: string, file: string): string {
-  return path.relative(root, file).replace(/\\/g, '/');
 }
