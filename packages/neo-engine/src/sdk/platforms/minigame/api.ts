@@ -20,6 +20,7 @@ export interface MinigameInnerAudio {
 export interface MinigameTouch {
   clientX: number;
   clientY: number;
+  identifier?: number;
 }
 
 export interface MinigameTouchEvent {
@@ -97,6 +98,8 @@ export interface MinigameAPI {
   offTouchMove?(callback: (event: MinigameTouchEvent) => void): void;
   onTouchEnd(callback: (event: MinigameTouchEvent) => void): void;
   offTouchEnd?(callback: (event: MinigameTouchEvent) => void): void;
+  onTouchCancel?(callback: (event: MinigameTouchEvent) => void): void;
+  offTouchCancel?(callback: (event: MinigameTouchEvent) => void): void;
   onShow?(callback: () => void): void;
   offShow?(callback: () => void): void;
   onHide?(callback: () => void): void;
