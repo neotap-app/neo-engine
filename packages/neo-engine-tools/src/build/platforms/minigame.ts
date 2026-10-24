@@ -4,6 +4,7 @@ import path from 'node:path';
 import { build } from 'vite';
 
 import { copyAssets } from '../assets';
+import { neoErrorHandlerSource } from '../bootstrap';
 import { createTempDir, resolveEntry } from '../common';
 import type { TargetBuildOptions } from '../types';
 
@@ -37,16 +38,19 @@ export async function buildMinigame(
   const entryAbs = resolveEntry(manifest, cwd);
   const outAbs = path.resolve(cwd, outDir);
   const temp = createTempDir(cwd, BOOTSTRAP_DIR);
+  const manifestLiteral = JSON.stringify(manifest.toJSON());
 
   const adapterEntry = path.join(temp.dir, ADAPTER_ENTRY);
   fs.writeFileSync(
     adapterEntry,
     [
-      `import { createMinigameRuntimeEnvironment } from '@neotap.app/neo-engine';`,
+      `import { createMinigameRuntimeEnvironment, NeoManifest } from '@neotap.app/neo-engine';`,
       `import type { MinigameAPI } from '@neotap.app/neo-engine';`,
       ``,
+      `const manifest = NeoManifest.fromObject(${manifestLiteral});`,
+      ``,
       `export function installMinigame(api: MinigameAPI) {`,
-      `  return createMinigameRuntimeEnvironment(api);`,
+      `  return createMinigameRuntimeEnvironment(api, { manifest });`,
       `}`,
       ``,
     ].join('\n'),
@@ -91,8 +95,6 @@ export async function buildMinigame(
       },
     });
 
-    const manifestLiteral = JSON.stringify(manifest.toJSON());
-
     const gameJs = [
       `// Neo Engine minigame entry (${info.namespace})`,
       `// Install DOM shim adapter BEFORE any engine/game code evaluates`,
@@ -102,6 +104,9 @@ export async function buildMinigame(
       `  throw new Error('${info.namespace} runtime not found');`,
       `}`,
       `var env = runtime.installMinigame(detected);`,
+      ``,
+      ...neoErrorHandlerSource({ mountExpression: 'env.canvas' }),
+      ``,
       `var core = require('./game-core.js');`,
       ``,
       `var manifest = core.NeoManifest.fromObject(${manifestLiteral});`,
@@ -112,9 +117,7 @@ export async function buildMinigame(
       `  canvas: env.canvas,`,
       `  manifest: manifest,`,
       `  loadInstance: function () { return Promise.resolve(core.default || core); },`,
-      `}).catch(function (err) {`,
-      `  console.error('[neo-engine] mount failed', err);`,
-      `});`,
+      `}).catch(reportNeoError);`,
       ``,
     ].join('\n');
     fs.writeFileSync(path.join(outAbs, 'game.js'), gameJs);

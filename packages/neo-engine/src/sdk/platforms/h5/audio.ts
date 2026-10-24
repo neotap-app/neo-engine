@@ -1,11 +1,23 @@
 import type { IAudio } from '../../types/game-context/audio';
 
-const audioContexts = new Map<string, HTMLAudioElement>();
-
 export function createH5Audio(): IAudio {
+  const audioContexts = new Map<string, HTMLAudioElement>();
+
   return {
     name: 'audio',
     available: true,
+    dispose() {
+      audioContexts.forEach((audio) => {
+        try {
+          audio.pause();
+          audio.currentTime = 0;
+          audio.src = '';
+        } catch {
+          // Ignore elements that cannot be reset.
+        }
+      });
+      audioContexts.clear();
+    },
     play(key, options = {}) {
       const el = audioContexts.get(key);
       if (el) {

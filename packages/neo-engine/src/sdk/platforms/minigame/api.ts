@@ -3,6 +3,7 @@ export interface MinigameStorage {
   setStorageSync(key: string, value: unknown): void;
   removeStorageSync(key: string): void;
   clearStorageSync(): void;
+  getStorageInfoSync?(): { keys: string[] };
 }
 
 export interface MinigameInnerAudio {
@@ -88,12 +89,18 @@ export interface MinigameAPI {
   setStorageSync(key: string, value: unknown): void;
   removeStorageSync(key: string): void;
   clearStorageSync(): void;
+  getStorageInfoSync?(): { keys: string[] };
   createInnerAudioContext(): MinigameInnerAudio;
   onTouchStart(callback: (event: MinigameTouchEvent) => void): void;
+  offTouchStart?(callback: (event: MinigameTouchEvent) => void): void;
   onTouchMove(callback: (event: MinigameTouchEvent) => void): void;
+  offTouchMove?(callback: (event: MinigameTouchEvent) => void): void;
   onTouchEnd(callback: (event: MinigameTouchEvent) => void): void;
+  offTouchEnd?(callback: (event: MinigameTouchEvent) => void): void;
   onShow?(callback: () => void): void;
+  offShow?(callback: () => void): void;
   onHide?(callback: () => void): void;
+  offHide?(callback: () => void): void;
   getSystemInfoSync?(): MinigameSystemInfo;
   getDeviceInfo?(): Partial<MinigameSystemInfo>;
   getAppBaseInfo?(): Partial<MinigameSystemInfo>;

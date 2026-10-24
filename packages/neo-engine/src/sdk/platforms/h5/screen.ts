@@ -14,12 +14,38 @@ export function createH5Screen(): IScreen {
     listeners.forEach((fn) => fn(orientation));
   };
 
-  orientationApi?.addEventListener('change', handleChange);
-  window.addEventListener('resize', handleChange);
+  let attached = false;
+
+  const attach = () => {
+    if (attached) {
+      return;
+    }
+    orientationApi?.addEventListener('change', handleChange);
+    window.addEventListener('resize', handleChange);
+    attached = true;
+  };
+
+  const detach = () => {
+    if (!attached) {
+      return;
+    }
+    orientationApi?.removeEventListener('change', handleChange);
+    window.removeEventListener('resize', handleChange);
+    attached = false;
+  };
+
+  attach();
 
   return {
     name: 'screen',
     available: true,
+    bind() {
+      attach();
+    },
+    dispose() {
+      detach();
+      listeners.clear();
+    },
     getInfo(): ScreenInfo {
       return {
         width: window.screen.width,

@@ -6,6 +6,7 @@ import { createServer } from 'vite';
 import type { ViteDevServer } from 'vite';
 
 import { copyAssets } from '../build/assets';
+import { neoErrorHandlerSource } from '../build/bootstrap';
 import { readManifest, resolveEntry } from '../build/common';
 
 const DEV_DIR = '.neo-dev';
@@ -70,17 +71,20 @@ export async function startDevServer(options: DevServerOptions): Promise<DevServ
     `  throw new Error('missing #game mount element');`,
     `}`,
     ``,
+    ...neoErrorHandlerSource({ mountExpression: 'mount' }),
+    ``,
     `const runtime = createRuntime();`,
     `const capabilities = createH5Capabilities({`,
+    `  manifest,`,
     `  resource: { baseUrl: './' },`,
     `});`,
     ``,
-    `void runtime.mount({`,
+    `runtime.mount({`,
     `  mount: { element: mount },`,
     `  capabilities,`,
     `  manifest,`,
     `  loadInstance: async () => entry,`,
-    `});`,
+    `}).catch(reportNeoError);`,
     ``,
   ].join('\n');
 
