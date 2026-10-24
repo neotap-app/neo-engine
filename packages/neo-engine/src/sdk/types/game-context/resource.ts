@@ -6,12 +6,22 @@ export type ResourceSource =
 
 export const ASSET_DIR = 'assets';
 
+export interface IImage {
+  readonly key: string;
+  /** 平台原生图片对象：HTMLImageElement / ImageBitmap / 小游戏 createImage() 结果 */
+  readonly source: unknown;
+  readonly width: number;
+  readonly height: number;
+  readonly url?: string;
+  dispose?(): void;
+}
+
 export interface IResource extends Capability {
   resolve(key: string): ResourceSource | null;
   load<T>(key: string): Promise<T>;
   loadText(key: string): Promise<string>;
   loadBinary(key: string): Promise<ArrayBuffer>;
-  loadImage(key: string): Promise<HTMLImageElement>;
+  loadImage(key: string): Promise<IImage>;
 }
 
 export function normalizeAssetKey(key: string): string {

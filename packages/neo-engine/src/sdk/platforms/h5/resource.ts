@@ -1,6 +1,7 @@
 import {
   assetPath,
   joinAssetUrl,
+  type IImage,
   type IResource,
   type ResourceSource,
 } from '../../types/game-context/resource';
@@ -48,15 +49,22 @@ export function createH5Resource(options: H5ResourceOptions = {}): IResource {
       const res = await request(key);
       return res.arrayBuffer();
     },
-    loadImage(key: string): Promise<HTMLImageElement> {
-      return new Promise<HTMLImageElement>((resolve, reject) => {
+    loadImage(key: string): Promise<IImage> {
+      return new Promise<IImage>((resolve, reject) => {
         const url = urlFor(key);
         if (!url) {
           reject(new Error(`invalid resource key: ${key}`));
           return;
         }
         const image = new Image();
-        image.onload = () => resolve(image);
+        image.onload = () =>
+          resolve({
+            key,
+            source: image,
+            width: image.naturalWidth || image.width,
+            height: image.naturalHeight || image.height,
+            url,
+          });
         image.onerror = () => reject(new Error(`failed to load image ${key}`));
         image.src = url;
       });

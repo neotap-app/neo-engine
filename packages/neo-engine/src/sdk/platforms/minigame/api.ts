@@ -10,11 +10,20 @@ export interface MinigameInnerAudio {
   src: string;
   loop: boolean;
   volume: number;
+  duration?: number;
+  playbackRate?: number;
+  startTime?: number;
+  seek?(time: number): void;
   play(): void;
   pause(): void;
   stop(): void;
   destroy(): void;
   onEnded(callback: () => void): void;
+  offEnded?(): void;
+  onError?(callback: (error: unknown) => void): void;
+  offError?(): void;
+  onCanplay?(callback: () => void): void;
+  offCanplay?(): void;
 }
 
 export interface MinigameTouch {
