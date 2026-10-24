@@ -1,3 +1,4 @@
+import type { NeoManifest } from '../../manifest';
 import type { IStorage } from '../../types/game-context/storage';
 import type { IAudio, AudioPlayOptions } from '../../types/game-context/audio';
 import type { IInput, PointerEventData } from '../../types/game-context/input';
@@ -14,16 +15,42 @@ import type { MinigameAPI, MinigameImage, MinigameInnerAudio, MinigameSystemInfo
 
 export interface MinigameCapabilityOptions {
   platform?: PlatformName;
+  manifest?: NeoManifest | null;
+  storage?: MinigameStorageOptions;
   resource?: {
     baseUrl?: string;
   };
 }
 
-export function createMinigameStorage(api: MinigameAPI, prefix = 'neo:'): IStorage {
-  const namespace = `${prefix}${'game'}:`;
+export interface MinigameStorageOptions {
+  prefix?: string;
+  namespace?: string;
+}
+
+export function createMinigameStorage(
+  api: MinigameAPI,
+  options: MinigameStorageOptions = {},
+): IStorage {
+  const prefix = options.prefix ?? 'neo:';
+  const namespace = `${prefix}${encodeURIComponent(options.namespace ?? 'game')}:`;
+
+  const namespacedKeys = (): string[] | null => {
+    const getStorageInfoSync = api.getStorageInfoSync;
+    if (typeof getStorageInfoSync !== 'function') {
+      return null;
+    }
+    try {
+      const info = getStorageInfoSync.call(api);
+      return Array.isArray(info?.keys) ? info.keys : null;
+    } catch {
+      return null;
+    }
+  };
+
   return {
     name: 'storage',
     available: true,
+    dispose: () => undefined,
     get(key) {
       const value = api.getStorageSync(`${namespace}${key}`);
       return typeof value === 'string' ? value : null;
@@ -35,7 +62,11 @@ export function createMinigameStorage(api: MinigameAPI, prefix = 'neo:'): IStora
       api.removeStorageSync(`${namespace}${key}`);
     },
     clear() {
-      api.clearStorageSync();
+      const keys = namespacedKeys();
+      if (!keys) {
+        return;
+      }
+      keys.filter((key) => key.startsWith(namespace)).forEach((key) => api.removeStorageSync(key));
     },
   };
 }
@@ -55,6 +86,17 @@ export function createMinigameAudio(api: MinigameAPI): IAudio {
   return {
     name: 'audio',
     available: true,
+    dispose() {
+      contexts.forEach((ctx) => {
+        try {
+          ctx.stop();
+          ctx.destroy();
+        } catch {
+          // Ignore contexts that are already released.
+        }
+      });
+      contexts.clear();
+    },
     play(key, options: AudioPlayOptions = {}) {
       const ctx = ensureContext(key);
       ctx.src = key;
@@ -108,13 +150,56 @@ export function createMinigameInput(api: MinigameAPI): IInput {
     listeners[type].forEach((fn) => fn(data));
   };
 
-  api.onTouchStart(emit('down'));
-  api.onTouchMove(emit('move'));
-  api.onTouchEnd(emit('up'));
+  const handlers = {
+    down: emit('down'),
+    move: emit('move'),
+    up: emit('up'),
+  };
+
+  let downAttached = false;
+  let moveAttached = false;
+  let upAttached = false;
+
+  const attach = () => {
+    if (!downAttached) {
+      api.onTouchStart(handlers.down);
+      downAttached = true;
+    }
+    if (!moveAttached) {
+      api.onTouchMove(handlers.move);
+      moveAttached = true;
+    }
+    if (!upAttached) {
+      api.onTouchEnd(handlers.up);
+      upAttached = true;
+    }
+  };
+
+  attach();
 
   return {
     name: 'input',
     available: true,
+    bind() {
+      attach();
+    },
+    dispose() {
+      if (downAttached && api.offTouchStart) {
+        api.offTouchStart(handlers.down);
+        downAttached = false;
+      }
+      if (moveAttached && api.offTouchMove) {
+        api.offTouchMove(handlers.move);
+        moveAttached = false;
+      }
+      if (upAttached && api.offTouchEnd) {
+        api.offTouchEnd(handlers.up);
+        upAttached = false;
+      }
+      listeners.down.length = 0;
+      listeners.move.length = 0;
+      listeners.up.length = 0;
+    },
     onPointerDown(listener) {
       listeners.down.push(listener);
     },
@@ -131,17 +216,60 @@ export function createMinigameLifecycle(api: MinigameAPI): ILifecycle {
   const showListeners: Array<() => void> = [];
   const hideListeners: Array<() => void> = [];
 
-  api.onShow?.(() => showListeners.forEach((fn) => fn()));
-  api.onHide?.(() => hideListeners.forEach((fn) => fn()));
+  const onShow = () => showListeners.forEach((fn) => fn());
+  const onHide = () => hideListeners.forEach((fn) => fn());
+
+  let showAttached = false;
+  let hideAttached = false;
+
+  const attach = () => {
+    if (!showAttached && api.onShow) {
+      api.onShow(onShow);
+      showAttached = true;
+    }
+    if (!hideAttached && api.onHide) {
+      api.onHide(onHide);
+      hideAttached = true;
+    }
+  };
+
+  attach();
 
   return {
     name: 'lifecycle',
     available: Boolean(api.onShow && api.onHide),
+    bind() {
+      attach();
+    },
+    dispose() {
+      if (showAttached && api.offShow) {
+        api.offShow(onShow);
+        showAttached = false;
+      }
+      if (hideAttached && api.offHide) {
+        api.offHide(onHide);
+        hideAttached = false;
+      }
+      showListeners.length = 0;
+      hideListeners.length = 0;
+    },
     onShow(listener) {
       showListeners.push(listener);
     },
+    offShow(listener) {
+      const index = showListeners.indexOf(listener);
+      if (index >= 0) {
+        showListeners.splice(index, 1);
+      }
+    },
     onHide(listener) {
       hideListeners.push(listener);
+    },
+    offHide(listener) {
+      const index = hideListeners.indexOf(listener);
+      if (index >= 0) {
+        hideListeners.splice(index, 1);
+      }
     },
   };
 }
@@ -223,6 +351,7 @@ export function createMinigameResource(api: MinigameAPI, options: MinigameCapabi
   return {
     name: 'resource',
     available: true,
+    dispose: () => undefined,
     resolve(key): ResourceSource | null {
       const filePath = pathFor(key);
       return filePath ? { kind: 'local', path: filePath } : null;
@@ -299,6 +428,7 @@ export function createMinigameSystem(api: MinigameAPI, platform: PlatformName): 
   return {
     name: 'system',
     available: Boolean(api.getSystemInfoSync),
+    dispose: () => undefined,
     getEnvironmentInfo(): EnvironmentInfo {
       const sys = api.getSystemInfoSync?.() ?? {};
       const device = api.getDeviceInfo?.() ?? {};
@@ -360,11 +490,31 @@ export function createMinigameScreen(api: MinigameAPI): IScreen {
     listeners.forEach((fn) => fn(orientation));
   };
 
-  api.onDeviceOrientationChange?.(handleDeviceOrientationChange);
+  let attached = false;
+
+  const attach = () => {
+    if (attached || !api.onDeviceOrientationChange) {
+      return;
+    }
+    api.onDeviceOrientationChange(handleDeviceOrientationChange);
+    attached = true;
+  };
+
+  attach();
 
   return {
     name: 'screen',
     available: true,
+    bind() {
+      attach();
+    },
+    dispose() {
+      if (attached && api.offDeviceOrientationChange) {
+        api.offDeviceOrientationChange(handleDeviceOrientationChange);
+        attached = false;
+      }
+      listeners.clear();
+    },
     getInfo(): ScreenInfo {
       const sys = readSystemInfo(api);
       return {

@@ -5,6 +5,7 @@ import { build } from 'vite';
 
 import { copyAssets } from '../assets';
 import { normalizeH5Base } from '../base';
+import { neoErrorHandlerSource } from '../bootstrap';
 import { createTempDir, resolveEntry } from '../common';
 import type { TargetBuildOptions } from '../types';
 
@@ -49,17 +50,20 @@ export async function buildH5(options: TargetBuildOptions): Promise<void> {
     `  throw new Error('missing #game mount element');`,
     `}`,
     ``,
+    ...neoErrorHandlerSource({ mountExpression: 'mount' }),
+    ``,
     `const runtime = createRuntime();`,
     `const capabilities = createH5Capabilities({`,
+    `  manifest,`,
     `  resource: { baseUrl: import.meta.env.BASE_URL },`,
     `});`,
     ``,
-    `void runtime.mount({`,
+    `runtime.mount({`,
     `  mount: { element: mount },`,
     `  capabilities,`,
     `  manifest,`,
     `  loadInstance: async () => entry,`,
-    `});`,
+    `}).catch(reportNeoError);`,
     ``,
   ].join('\n');
 

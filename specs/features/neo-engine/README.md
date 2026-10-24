@@ -145,6 +145,11 @@ packages/neo-engine-tools/src/    # @neotap.app/neo-engine-tools：构建工具 
 - 引擎必需接口随外壳：`IResource`（资源寻址 + JSON/文本/二进制/图片加载）、`IPointer`/输入、`ILifecycle`（前后台/onShow/onHide）、渲染上下文
 - 环境信息：`ISystem`（`getEnvironmentInfo` → 平台 + 运行时 + 设备信息）；屏幕信息：`IScreen`（屏幕尺寸/像素比/安全区、获取/监听/取消监听方向、能否及请求主动改方向）
 - 游戏脚本只依赖接口，禁止直接用 `window` / `wx` / `tt` 全局
+- 能力生命周期：`Capability` 可选 `bind({ canvas, game })` / `dispose()`；runtime 创建 canvas（2D 含 `Phaser.Game`）后统一 bind，`unmount` 依次取消 3D RAF / 生命周期订阅、dispose 所有能力、销毁实例与 Phaser game、释放 3D renderer、移除 canvas 并复位状态（幂等、可反复 mount/unmount）
+- `ILifecycle` 提供 `onShow`/`offShow`、`onHide`/`offHide`；mount 后订阅，隐藏暂停（2D `game.loop.pause()`，3D 停止 RAF）、显示恢复
+- 输入坐标：H5 绑定 canvas，按 `getBoundingClientRect()` 与画布内部分辨率换算，兼容 `Scale.FIT` 缩放/居中；`H5InputOptions.target` 仅作独立使用入口
+- 存储命名空间：实现按 `neo:<namespace>:` 隔离，namespace 由 manifest 名称编码派生（缺省 `game`）；`clear()` 只清当前 namespace，小游戏拿不到 key 列表时不清空全部存储
+- 错误边界：`RuntimeOptions.onError` 接收 mount 失败；生成的引导代码统一 `.catch` 上报（`console.error` + `neo:error` 事件 + 可见兜底文案），并监听 `error` / `unhandledrejection`
 - 预留扩展点（后补不改架构）：震动 / 分享 / 埋点 / 广告 / 支付 / 登录 / 网络请求
 - 实现：`packages/neo-engine/src/sdk/platforms/h5/`（真 DOM）、`minigame/`（共享 DOM shim + 能力，基于 `MinigameAPI` 抽象）、`wechat/` 与 `douyin/`（`wx.*` / `tt.*` 薄封装 + 自动检测）
 - 方向/屏幕：小游戏侧方向监听走 `wx/tt.onDeviceOrientationChange`，判定以 `windowWidth`/`windowHeight` 为准（微信文档提示 iOS 横屏 `deviceOrientation` 可能不准）；主动改方向走 `wx/tt.setDeviceOrientation`

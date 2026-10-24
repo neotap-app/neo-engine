@@ -56,7 +56,19 @@ export function createMinigameAdapter(api: MinigameAPI): MinigameAdapter {
       api.removeStorageSync(key);
     },
     clear(): void {
-      api.clearStorageSync();
+      const getStorageInfoSync = api.getStorageInfoSync;
+      if (typeof getStorageInfoSync !== 'function') {
+        return;
+      }
+      try {
+        const info = getStorageInfoSync.call(api);
+        if (!Array.isArray(info?.keys)) {
+          return;
+        }
+        info.keys.filter((key) => key.startsWith('neo:')).forEach((key) => api.removeStorageSync(key));
+      } catch {
+        // Leave storage untouched when keys cannot be enumerated.
+      }
     },
     key(_index: number): string | null {
       return null;

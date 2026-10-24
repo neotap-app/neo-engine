@@ -2,11 +2,12 @@ import type { IStorage } from '../../types/game-context/storage';
 
 export interface H5StorageOptions {
   prefix?: string;
+  namespace?: string;
 }
 
 export function createH5Storage(options: H5StorageOptions = {}): IStorage {
   const prefix = options.prefix ?? 'neo:';
-  const namespace = `${prefix}${'game'}:`;
+  const namespace = `${prefix}${encodeURIComponent(options.namespace ?? 'game')}:`;
 
   return {
     name: 'storage',

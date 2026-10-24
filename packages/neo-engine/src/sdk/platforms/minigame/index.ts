@@ -22,7 +22,7 @@ import {
 
 export * from './api';
 export * from './adapter';
-export type { MinigameCapabilityOptions } from './capabilities';
+export type { MinigameCapabilityOptions, MinigameStorageOptions } from './capabilities';
 
 export interface MinigameCapabilities extends CapabilityBundle {
   storage: IStorage;
@@ -37,7 +37,10 @@ export interface MinigameCapabilities extends CapabilityBundle {
 export function createMinigameCapabilities(api: MinigameAPI, options: MinigameCapabilityOptions = {}): MinigameCapabilities {
   const platform = options.platform ?? detectMinigameAPI()?.namespace ?? 'wechat';
   return {
-    storage: createMinigameStorage(api),
+    storage: createMinigameStorage(api, {
+      ...options.storage,
+      namespace: options.storage?.namespace ?? options.manifest?.name,
+    }),
     audio: createMinigameAudio(api),
     input: createMinigameInput(api),
     lifecycle: createMinigameLifecycle(api),
