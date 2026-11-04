@@ -9,13 +9,14 @@ import type { IScreen } from './game-context/screen';
 import type { IStorage } from './game-context/storage';
 import type { IResource } from './game-context/resource';
 import type { ISystem } from './game-context/system';
+import type { ICanvas } from './game-context/types';
 
 export type GameMode = '2d' | '3d';
 
 export interface GameContext {
   mode: GameMode;
   manifest: NeoManifest | null;
-  canvas: HTMLCanvasElement;
+  canvas: ICanvas;
   storage: IStorage;
   audio: IAudio;
   input: IInput;

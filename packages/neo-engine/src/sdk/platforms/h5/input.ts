@@ -1,4 +1,4 @@
-import type { CapabilityBindings } from '../../types/game-context/types';
+import type { CapabilityBindings, ICanvas } from '../../types/game-context/types';
 import type {
   IInput,
   KeyEventData,
@@ -40,7 +40,7 @@ export function createH5Input(options: H5InputOptions = {}): IInput {
   const keyUpListeners: KeyListener[] = [];
 
   let target: HTMLElement | null = null;
-  let canvas: HTMLCanvasElement | null = null;
+  let canvas: ICanvas | null = null;
   let keyTarget: Window | null = null;
 
   const toCanvasPoint = (clientX: number, clientY: number) => {
@@ -131,7 +131,7 @@ export function createH5Input(options: H5InputOptions = {}): IInput {
     keyTarget = null;
   };
 
-  const bindTo = (element: HTMLElement, canvasElement: HTMLCanvasElement | null) => {
+  const bindTo = (element: HTMLElement, canvasElement: ICanvas | null) => {
     unbind();
     target = element;
     canvas = canvasElement;
@@ -157,7 +157,7 @@ export function createH5Input(options: H5InputOptions = {}): IInput {
     name: 'input',
     available: true,
     bind(bindings: CapabilityBindings) {
-      bindTo(bindings.canvas, bindings.canvas);
+      bindTo(bindings.canvas as unknown as HTMLElement, bindings.canvas);
     },
     dispose() {
       unbind();

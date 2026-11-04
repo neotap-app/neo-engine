@@ -2,19 +2,30 @@ import type Phaser from 'phaser';
 import type * as THREE from 'three';
 
 import type { CapabilityBundle } from '../types/game-context';
-import type { CapabilityBindings } from '../types/game-context/types';
+import type {
+  CanvasHost,
+  CapabilityBindings,
+  FrameCancel,
+  FrameRequest,
+  ICanvas,
+} from '../types/game-context/types';
 import type { GameContext2D, GameContext3D, NeoGameInstance } from '../types/game';
 import type { NeoManifest } from '../manifest';
 
+export type { FrameCancel, FrameRequest } from '../types/game-context/types';
+
 export interface MountPoint {
-  element: HTMLElement;
+  element: CanvasHost;
 }
 
 export interface RuntimeOptions {
-  mount: MountPoint;
+  mount?: MountPoint;
   capabilities: CapabilityBundle;
   manifest?: NeoManifest | null;
-  canvas?: HTMLCanvasElement;
+  canvas?: ICanvas;
+  createCanvas?: () => ICanvas;
+  requestFrame?: FrameRequest;
+  cancelFrame?: FrameCancel;
   loadInstance: () => Promise<NeoGameInstance>;
   onError?: (error: unknown) => void;
 }
@@ -24,15 +35,48 @@ export interface NeoRuntime {
   unmount(): void;
 }
 
-function createCanvas(mount: MountPoint): HTMLCanvasElement {
-  const canvas = document.createElement('canvas');
-  mount.element.appendChild(canvas);
-  return canvas;
+function createDomCanvas(): ICanvas {
+  if (typeof document !== 'undefined' && typeof document.createElement === 'function') {
+    return document.createElement('canvas') as unknown as ICanvas;
+  }
+  throw new Error('runtime requires a canvas: pass "canvas" or "createCanvas" outside a DOM environment');
 }
+
+interface ResolvedCanvas {
+  canvas: ICanvas;
+  owned: boolean;
+}
+
+function resolveCanvas(options: RuntimeOptions): ResolvedCanvas {
+  if (options.canvas) {
+    return { canvas: options.canvas, owned: false };
+  }
+  if (!options.mount) {
+    throw new Error('runtime requires "mount" when the canvas is created by the runtime');
+  }
+  const canvas = options.createCanvas ? options.createCanvas() : createDomCanvas();
+  options.mount.element.appendChild(canvas);
+  return { canvas, owned: true };
+}
+
+const defaultRequestFrame: FrameRequest = (callback) => {
+  if (typeof requestAnimationFrame === 'function') {
+    return requestAnimationFrame(() => callback());
+  }
+  return setTimeout(callback, 16);
+};
+
+const defaultCancelFrame: FrameCancel = (handle) => {
+  if (typeof cancelAnimationFrame === 'function') {
+    cancelAnimationFrame(handle);
+    return;
+  }
+  clearTimeout(handle);
+};
 
 function bindCapabilities(
   capabilities: CapabilityBundle,
-  canvas: HTMLCanvasElement,
+  canvas: ICanvas,
   game?: unknown,
 ): void {
   const bindings: CapabilityBindings = { canvas, game };
@@ -59,16 +103,17 @@ function disposeCapabilities(capabilities: CapabilityBundle): void {
   }
 }
 
-function removeCanvas(canvas: HTMLCanvasElement | null): void {
+function removeCanvas(canvas: ICanvas | null): void {
   if (!canvas) {
     return;
   }
   try {
     if (typeof canvas.remove === 'function') {
       canvas.remove();
-    } else {
-      canvas.parentNode?.removeChild(canvas);
+      return;
     }
+    const parent = (canvas as { parentNode?: { removeChild?: (node: unknown) => unknown } | null }).parentNode;
+    parent?.removeChild?.(canvas);
   } catch {
     // The host may already have detached the canvas.
   }
@@ -87,7 +132,7 @@ async function mount2D(
   const game = new Phaser.Game({
     ...instance.config,
     type,
-    canvas: ctx.canvas,
+    canvas: ctx.canvas as unknown as HTMLCanvasElement,
   });
   ctx.game = game;
   await instance.create?.(ctx);
@@ -96,7 +141,7 @@ async function mount2D(
 async function prepare3D(ctx: GameContext3D): Promise<void> {
   const { WebGLRenderer, PerspectiveCamera, Scene } = await import('three');
   const renderer = new WebGLRenderer({
-    canvas: ctx.canvas,
+    canvas: ctx.canvas as unknown as HTMLCanvasElement,
     antialias: true,
   });
   const scene = new Scene();
@@ -109,12 +154,15 @@ async function prepare3D(ctx: GameContext3D): Promise<void> {
 export function createRuntime(): NeoRuntime {
   let instance: NeoGameInstance | null = null;
   let ctx: GameContext2D | GameContext3D | null = null;
-  let canvas: HTMLCanvasElement | null = null;
+  let canvas: ICanvas | null = null;
+  let canvasOwned = false;
   let capabilities: CapabilityBundle | null = null;
   let mounted = false;
   let cleaningUp = false;
   let loopRunning = false;
   let rafId: number | null = null;
+  let requestFrame: FrameRequest = defaultRequestFrame;
+  let cancelFrame: FrameCancel = defaultCancelFrame;
   let showHandler: (() => void) | null = null;
   let hideHandler: (() => void) | null = null;
 
@@ -132,15 +180,15 @@ export function createRuntime(): NeoRuntime {
         return;
       }
       ctx.renderer.render(ctx.scene, ctx.camera);
-      rafId = requestAnimationFrame(tick);
+      rafId = requestFrame(tick);
     };
-    rafId = requestAnimationFrame(tick);
+    rafId = requestFrame(tick);
   };
 
   const stopLoop = () => {
     loopRunning = false;
     if (rafId !== null) {
-      cancelAnimationFrame(rafId);
+      cancelFrame(rafId);
       rafId = null;
     }
   };
@@ -258,12 +306,15 @@ export function createRuntime(): NeoRuntime {
         }
       }
 
-      removeCanvas(canvas);
+      if (canvasOwned) {
+        removeCanvas(canvas);
+      }
     } finally {
       mounted = false;
       instance = null;
       ctx = null;
       canvas = null;
+      canvasOwned = false;
       capabilities = null;
       cleaningUp = false;
     }
@@ -276,10 +327,14 @@ export function createRuntime(): NeoRuntime {
       }
       mounted = true;
       capabilities = options.capabilities;
+      requestFrame = options.requestFrame ?? defaultRequestFrame;
+      cancelFrame = options.cancelFrame ?? defaultCancelFrame;
 
       try {
-        const canvasElement = options.canvas ?? createCanvas(options.mount);
+        const resolved = resolveCanvas(options);
+        const canvasElement = resolved.canvas;
         canvas = canvasElement;
+        canvasOwned = resolved.owned;
         const base = {
           canvas: canvasElement,
           manifest: options.manifest ?? null,

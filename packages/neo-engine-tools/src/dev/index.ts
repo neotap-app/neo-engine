@@ -81,6 +81,7 @@ export async function startDevServer(options: DevServerOptions): Promise<DevServ
     ``,
     `runtime.mount({`,
     `  mount: { element: mount },`,
+    `  createCanvas: function () { return document.createElement('canvas'); },`,
     `  capabilities,`,
     `  manifest,`,
     `  loadInstance: async () => entry,`,
