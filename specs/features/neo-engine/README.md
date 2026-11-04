@@ -148,6 +148,8 @@ packages/neo-engine-tools/src/    # @neotap.app/neo-engine-tools：构建工具 
 - 环境信息：`ISystem`（`getEnvironmentInfo` → 平台 + 运行时 + 设备信息）；屏幕信息：`IScreen`（屏幕尺寸/像素比/安全区、获取/监听/取消监听方向、能否及请求主动改方向）
 - 游戏脚本只依赖接口，禁止直接用 `window` / `wx` / `tt` 全局
 - 能力生命周期：`Capability` 可选 `bind({ canvas, game })` / `dispose()`；runtime 创建 canvas（2D 含 `Phaser.Game`）后统一 bind，`unmount` 依次取消 3D RAF / 生命周期订阅、dispose 所有能力、销毁实例与 Phaser game、释放 3D renderer、移除 canvas 并复位状态（幂等、可反复 mount/unmount）
+- 跨端外壳：canvas / mount 使用平台无关的 `ICanvas` / `CanvasHost` 契约；宿主可注入 `canvas`（小游戏上屏 canvas，unmount 不移除）或 `createCanvas` 工厂（H5），3D 帧调度可注入 `requestFrame` / `cancelFrame`，无 DOM 时不再依赖全局 `document` / `requestAnimationFrame`
+- 小游戏 adapter：构造期不引用全局 `document` / `window`，`Image` / `Audio` 由 `MinigameAPI.createImage` 或全局 `createImage` 派生，`install()` 幂等，`document.createElement` 不回落到 shim 自身；帧调度在 install 前捕获宿主 rAF，并把 `requestFrame` / `cancelFrame` 交给 runtime
 - `ILifecycle` 提供 `onShow`/`offShow`、`onHide`/`offHide`；mount 后订阅，隐藏暂停（2D `game.loop.pause()`，3D 停止 RAF）、显示恢复
 - 输入坐标：H5 绑定 canvas，按 `getBoundingClientRect()` 与画布内部分辨率换算，兼容 `Scale.FIT` 缩放/居中；`H5InputOptions.target` 仅作独立使用入口。支持 `pointerId` 多点、`pointercancel`、滚轮、键盘（H5 `window`）与全部 `off*` 解绑；小游戏无键盘/滚轮时降级为 no-op
 - 存储命名空间：实现按 `neo:<namespace>:` 隔离，namespace 由 manifest 名称编码派生（缺省 `game`）；`clear()` 只清当前 namespace，小游戏拿不到 key 列表时不清空全部存储

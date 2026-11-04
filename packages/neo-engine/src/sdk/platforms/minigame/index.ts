@@ -60,6 +60,8 @@ export function createMinigameRuntimeEnvironment(api: MinigameAPI, options: Mini
   adapter.install();
   return {
     canvas: adapter.canvas,
+    requestFrame: adapter.requestFrame,
+    cancelFrame: adapter.cancelFrame,
     capabilities: createMinigameCapabilities(api, options),
   };
 }

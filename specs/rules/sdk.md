@@ -15,6 +15,8 @@
 
 - 游戏脚本只依赖能力接口（`IStorage` / `IAudio` / `IInput` / `ILifecycle` / `IResource` / `ISystem` / `IScreen`，见 `types/game-context/`），**禁止直接用 `window` / `wx` / `tt` 等全局**
 - 平台能力实现放 `src/sdk/platforms/<platform>/`；无 DOM 小游戏的公共逻辑放 `platforms/minigame/`（基于 `MinigameAPI` 抽象），`wechat/` 与 `douyin/` 只做 `wx.*` / `tt.*` 薄封装 + 自动检测
+- 跨端类型契约：`ICanvas`（`width` / `height` / `getContext` / 可选 `remove`）与 `CanvasHost`（`appendChild`）定义在 `types/game-context/types.ts`；`GameContext.canvas`、`CapabilityBindings.canvas`、`RuntimeOptions.canvas` / `mount` 一律使用该契约，**禁止**在平台无关层引用 `HTMLElement` / `HTMLCanvasElement`
+- 小游戏 DOM shim 约束：adapter 构造期**禁止**引用全局 `document` / `window`（真机无这些全局）；`Image` / `Audio` 必须由 `MinigameAPI` 的 `createImage` 或全局 `createImage` 派生；`install()` 必须幂等，`document.createElement` 不得回落到 shim 自身（避免自递归）
 - 无实现的能力一律 **no-op 降级**，接口预留扩展点（震动 / 分享 / 埋点 / 广告 / 支付 / 登录等后补，**不改架构**）
 - 新增平台 = 新增 `platforms/<platform>/` 实现 + 自动检测，不改调用方
 - 方向/屏幕信息：小游戏侧基于 `MinigameAPI` 抽象（`getSystemInfoSync` / `setDeviceOrientation` / `onDeviceOrientationChange`），方向判定以 `windowWidth`/`windowHeight` 为准（微信文档提示 iOS 横屏 `deviceOrientation` 可能不准）
@@ -30,9 +32,11 @@
 
 ## 能力生命周期与宿主清理
 
-- `Capability` 可选 `bind?(bindings: CapabilityBindings)` 与 `dispose?()`；`CapabilityBindings` 至少含 `canvas: HTMLCanvasElement`，可含 `game?: unknown`
+- `Capability` 可选 `bind?(bindings: CapabilityBindings)` 与 `dispose?()`；`CapabilityBindings` 至少含 `canvas: ICanvas`，可含 `game?: unknown`
 - runtime 创建 canvas（2D 还需创建 `Phaser.Game`）后对所有能力调用 `bind({ canvas, game })`，宿主/引导方不再手动接线
-- `runtime.unmount()` 必须幂等、可重复调用且不抛错，顺序为：取消 3D RAF → 取消生命周期订阅 → 所有能力 `dispose()` → `instance.destroy`（try/catch）→ 2D `game.destroy(true)`（try/catch）→ 3D `renderer.dispose()` / `forceContextLoss?.()` → 移除 canvas → 重置状态
+- canvas 由宿主注入：`RuntimeOptions.canvas` 直接使用既有 canvas（小游戏上屏 canvas）；否则用 `createCanvas: () => ICanvas` 工厂创建并挂到 `mount.element`；无 DOM 且未提供 canvas 时抛明确错误。3D 帧调度可注入 `requestFrame` / `cancelFrame`，缺省回退全局 `requestAnimationFrame`，再回退 `setTimeout`。小游戏引导代码必须注入 adapter 提供的 `requestFrame` / `cancelFrame`，不得依赖被 shim 改写后的全局
+- adapter 的帧调度必须在 `install()` 前捕获宿主 `requestAnimationFrame` / `cancelAnimationFrame`；shim 自身不得再读取同名全局（否则宿主缺失该能力时自递归）
+- `runtime.unmount()` 必须幂等、可重复调用且不抛错，顺序为：取消 3D RAF → 取消生命周期订阅 → 所有能力 `dispose()` → `instance.destroy`（try/catch）→ 2D `game.destroy(true)`（try/catch）→ 3D `renderer.dispose()` / `forceContextLoss?.()` → 移除 **runtime 自己创建的** canvas（宿主注入的 canvas 保留）→ 重置状态
 - `ILifecycle` 同时提供 `onShow` / `offShow` 与 `onHide` / `offHide`；mount 后订阅，`onHide` 暂停（2D `game.loop.pause()`，3D 停止 RAF），`onShow` 恢复，unmount 时退订
 - H5 的 input / lifecycle / screen 在 `dispose()` 中移除注册的全部 DOM 监听；H5 音频的播放器 Map 必须 per-instance，dispose 只影响当前 runtime
 - 小游戏能力在 `dispose()` 中优先调用对应 `off*`，缺失时清空本地监听数组，避免影响其他实例

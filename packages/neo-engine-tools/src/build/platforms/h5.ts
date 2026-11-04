@@ -60,6 +60,7 @@ export async function buildH5(options: TargetBuildOptions): Promise<void> {
     ``,
     `runtime.mount({`,
     `  mount: { element: mount },`,
+    `  createCanvas: function () { return document.createElement('canvas'); },`,
     `  capabilities,`,
     `  manifest,`,
     `  loadInstance: async () => entry,`,

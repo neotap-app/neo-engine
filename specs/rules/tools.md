@@ -54,8 +54,14 @@
 - `neo lint`：校验 manifest 可解析、入口存在，并从入口遍历**本地 import 图**（跳过 `node_modules` / `dist` / `out` / `.neo-build` / `.neo-dev` / `.neo`）
 - 使用 **TypeScript AST** 解析（注释与字符串不误报），违规输出 `file:line:col`
 - 资产 key 校验：识别 `.loadText` / `.loadBinary` / `.loadImage` / `.resolve` / `.load` 以及同名独立函数调用，第一个参数为字符串字面量时与 `assets/` 索引比对；变量/模板字符串参数跳过；`assets/` 缺失视为空集合
-- 禁止的平台/浏览器用法：`window` / `document` / `localStorage` / `navigator` / `wx` / `tt` / `Proxy`，以及 `eval()` / `new Function()` / `Function()`
+- 禁止的平台/浏览器用法：
+  - DOM/BOM：`window` / `document` / `navigator` / `location` / `history` / `screen` / `localStorage` / `sessionStorage` / `indexedDB` / `getComputedStyle` / `matchMedia` / `performance` / `alert` / `confirm` / `prompt` / `CustomEvent` / `DOMParser` / `XMLSerializer` / `ResizeObserver` / `IntersectionObserver` / `MutationObserver` / `requestIdleCallback`
+  - 网络/二进制/媒体：`fetch` / `XMLHttpRequest` / `WebSocket` / `Worker` / `SharedWorker` / `FileReader` / `Blob` / `File` / `URL` / `Image` / `Audio` / `AudioContext` / `webkitAudioContext` / `createImageBitmap`
+  - DOM 类型/画布：`HTMLElement` / `HTMLCanvasElement` / `HTMLImageElement` / `HTMLAudioElement` / `HTMLVideoElement` / `CanvasRenderingContext2D` / `OffscreenCanvas`
+  - 平台/宿主/Node：`wx` / `tt` / `Proxy` / `process` / `Buffer` / `require` / `module`
+  - 动态代码：`eval()` / `new Function()` / `Function()`
   - 对象属性名/声明名（如 `obj.window`、`{ window: 1 }`）不算全局引用
+  - 作用域内同名声明（变量 / 参数 / 解构绑定 / 导入 / 类型别名 / 类型参数 / class / enum）不算全局引用；检查按词法作用域解析，支持 shadowing
   - `eval` 检测引用与调用；`Function` 只检测调用或构造
 - 有违规时返回 **exit code 1**；无违规时正常通过（exit 0）
 
