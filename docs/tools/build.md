@@ -31,7 +31,20 @@ function buildProject(options: BuildOptions): Promise<BuildResult>;
 
 1. 读取 `package.neo.json`，校验 manifest，并精确比对声明的 `engine` 版本与已安装的 `@neotap.app/neo-engine` 版本；
 2. 任一校验失败直接抛错，不产出半成品；
-3. 按 target 构建，并把工程 `assets/**` 原样拷贝到产物（public 目录语义）。
+3. **清空目标 `outDir`**（小游戏与 H5 一致），避免重复构建或切换 target 残留旧文件；
+4. 按 target 构建，并把工程 `assets/**` 原样拷贝到产物（public 目录语义）。
+
+构建使用工程内 `.neo-build/<pid>-<timestamp>/` 临时目录；成功、失败或异常都会在 `finally` 中清理，并顺带清理同工程内已退出进程遗留的 `.neo-build/<pid>-*`。
+
+## 2D / 3D 与 Three.js
+
+构建期会扫描入口的本地 import 图，识别游戏实例的 `mode`：
+
+- `mode: '2d'`：`three` 被解析为内置 stub，2D 产物不包含 Three.js 代码，也不会产出 `three*` chunk；
+- `mode: '3d'`：正常打包 `three`，并按需产出 `three.module-*.js` chunk；
+- 无法静态识别时按 `3d` 处理（保守保留 `three`）。
+
+stub 只在 2D 构建中占位；若 2D 游戏误用 Three.js，会得到明确的 “three.js is not bundled in 2D builds” 错误。需要 3D 时把入口实例改为 `mode: '3d'`。
 
 ## 产物结构
 
@@ -56,6 +69,8 @@ dist/
   neotap-runtime/adapter.js
   assets/                 # 工程 assets/** 原样镜像
 ```
+
+所有产物 JS（入口与分包 chunk）扩展名统一为 `.js`，不会生成 `.cjs`；3D 构建会额外产出 `three.module-*.js`。
 
 ## H5 base
 

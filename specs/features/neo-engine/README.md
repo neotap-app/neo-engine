@@ -101,6 +101,8 @@
 - H5 的 `base` **默认 `'./'`**（相对资源路径，根路径/子路径均可部署）；同时影响 **HTML/JS chunk URL** 与 public `assets/` 目录（P0-2 落地后 assets 原样拷贝、按同一 base 相对访问、无 manifest）
 - 子路径或 CDN 托管用 `base` / `--base` 覆盖（如 `/games/pvz`）。API 与 CLI 共用 `normalizeH5Base`：自动补尾 `/`（`/games/pvz` ≡ `/games/pvz/`，`game/` 保持相对），保留 `./`、`https://`、`//` 形态，拒绝空/纯空白
 - 该参数**仅 H5 生效**，小游戏 target 忽略
+- 构建期扫描入口本地 import 图识别实例 `mode`：`2d` 将 `three` 解析为 stub，产物不含 Three.js chunk；`3d` 正常打包 `three`；无法识别按 `3d` 保守处理
+- 小游戏产物所有 JS（入口与 chunk）统一 `.js` 扩展名，不生成 `.cjs`；每次构建前清空 `outDir`，临时目录用 `.neo-build/<pid>-<timestamp>/` 并在 `finally` 清理
 
 ## 目录结构（SDK / Tools 两包分离）
 
@@ -119,7 +121,7 @@ packages/neo-engine/src/          # @neotap.app/neo-engine：客户端 SDK 运�
 
 packages/neo-engine-tools/src/    # @neotap.app/neo-engine-tools：构建工具 + CLI（Node 侧，依赖 SDK）
   build/
-    index.ts  types.ts  common.ts  assets.ts
+    index.ts  types.ts  common.ts  assets.ts  mode.ts
     platforms/                    # 平台特定构建
       h5.ts  wechat.ts  douyin.ts  minigame.ts（小游戏共享：双 chunk 保证 adapter 先于引擎）
   cli/

@@ -17,6 +17,10 @@
 - 转译用 vite，bundle 锁定 **CommonJS + ES5**；禁 `eval` / `new Function`，`Proxy` 不可用
 - 编译/发布用**平台官方工具链**（微信 `miniprogram-ci`；抖音走 IDE/IDE CLI）
 - 小游戏产物为**双 chunk**：保证 adapter 先于引擎加载
+- 小游戏产物所有 JS（入口与 chunk）扩展名统一为 `.js`，**禁止 `.cjs`**（微信/抖音上传白名单）；通过 `build.rolldownOptions.output.chunkFileNames` 固定 chunk 名，入口名仍由 `lib.fileName` 决定
+- **每次构建前清空 `outDir`**（小游戏与 H5 一致）：小游戏走 `prepareOutputDir`，拒绝会包含工程根的路径；Vite 侧 `emptyOutDir: false` 避免 “outDir is not inside project root” 警告
+- 构建期扫描入口本地 import 图识别 `mode`：`2d` 时将 `three` 解析为内置 stub，不产出/依赖 Three.js chunk；`3d` 正常打包 `three`；无法识别时按 `3d` 处理
+- 构建临时目录为 `.neo-build/<pid>-<timestamp>/`（与 `.neo-dev` 一致）；成功/失败/异常在 `finally` 清理，并在启动时清理已退出进程遗留目录；`.gitignore` 与 lint 的 `.neo-build` 排除规则覆盖整个目录
 - 资产管线：H5 与小游戏都由 `src/build/assets.ts` 统一处理
   - 构建结束后把工程 `assets/**` 原样镜像到产物 `assets/**`（public 目录语义），保持目录结构；`copyAssets` 是唯一职责
   - **不生成** `assets-manifest.json` / `.neo/assets.d.ts`，也**不在 lint/build 阶段校验资产 key**；资产发现完全由 `assets/**` 目录决定，新增文件无需声明

@@ -7,6 +7,7 @@ import { copyAssets } from '../assets';
 import { normalizeH5Base } from '../base';
 import { neoErrorHandlerSource } from '../bootstrap';
 import { createTempDir, resolveEntry } from '../common';
+import { createThreeStub, detectGameMode } from '../mode';
 import type { TargetBuildOptions } from '../types';
 
 const BOOTSTRAP_DIR = '.neo-build';
@@ -18,6 +19,7 @@ export async function buildH5(options: TargetBuildOptions): Promise<void> {
   const base = normalizeH5Base(options.base);
   const entryAbs = resolveEntry(manifest, cwd);
   const outAbs = path.resolve(cwd, outDir);
+  const mode = detectGameMode(cwd, entryAbs);
   const temp = createTempDir(cwd, BOOTSTRAP_DIR);
 
   const html = [
@@ -68,14 +70,18 @@ export async function buildH5(options: TargetBuildOptions): Promise<void> {
     ``,
   ].join('\n');
 
-  fs.writeFileSync(path.join(temp.dir, BOOTSTRAP_HTML), html);
-  fs.writeFileSync(path.join(temp.dir, BOOTSTRAP_TS), bootstrap);
-
   try {
+    const threeAlias = mode === '2d' ? createThreeStub(temp.dir) : null;
+    fs.writeFileSync(path.join(temp.dir, BOOTSTRAP_HTML), html);
+    fs.writeFileSync(path.join(temp.dir, BOOTSTRAP_TS), bootstrap);
+
     await build({
       root: temp.dir,
       base,
       logLevel: 'warn',
+      resolve: threeAlias
+        ? { alias: [{ find: /^three$/, replacement: threeAlias }] }
+        : undefined,
       build: {
         outDir: outAbs,
         emptyOutDir: true,
