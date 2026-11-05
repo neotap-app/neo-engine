@@ -1,9 +1,30 @@
 {
   "name": "@neotap.app/neo-engine",
   "version": "0.1.0",
-  "private": true,
+  "license": "Apache-2.0",
+  "author": "NeoTap",
   "type": "module",
   "description": "Neo Engine SDK：Phaser 3 (2D) + Three.js (3D) 多平台编译游戏引擎的客户端运行时。",
+  "keywords": [
+    "game",
+    "game-engine",
+    "phaser",
+    "threejs",
+    "minigame",
+    "wechat",
+    "douyin",
+    "h5",
+    "typescript"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/neotap-app/neo-engine.git",
+    "directory": "packages/neo-engine"
+  },
+  "homepage": "https://github.com/neotap-app/neo-engine#readme",
+  "bugs": {
+    "url": "https://github.com/neotap-app/neo-engine/issues"
+  },
   "main": "./dist/index.js",
   "module": "./dist/index.js",
   "types": "./dist/index.d.ts",

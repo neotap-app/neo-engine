@@ -1,9 +1,30 @@
 {
   "name": "neo-engine-monorepo",
   "private": true,
+  "license": "Apache-2.0",
+  "author": "NeoTap",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/neotap-app/neo-engine.git"
+  },
+  "homepage": "https://github.com/neotap-app/neo-engine#readme",
+  "bugs": {
+    "url": "https://github.com/neotap-app/neo-engine/issues"
+  },
+  "keywords": [
+    "game",
+    "game-engine",
+    "phaser",
+    "threejs",
+    "minigame",
+    "wechat",
+    "douyin",
+    "h5",
+    "typescript"
+  ],
   "packageManager": "pnpm@10.12.3",
   "engines": {
-    "node": ">=20.17.0",
+    "node": "^20.19.0 || >=22.12.0",
     "pnpm": ">=10.12.3"
   },
   "scripts": {
