@@ -21,9 +21,9 @@
 
 ## 交叉引用
 
-- 所有 spec 之间的交叉引用使用**仓库根绝对路径**：`/specs/<目录>/<文件>`，如 `/specs/rules/sdk.md`、`/specs/features/neo-engine/README.md`
-- **禁止使用相对路径**（`./`、`../`）
-- 指向仓库内其他位置（packages / examples 源码、README）也用根绝对路径：`/packages/...`、`/examples/...`
+- 所有 spec 之间的交叉引用使用**相对当前文件的路径**：如 `../rules/sdk.md`、`../features/neo-engine/README.md`
+- **禁止使用以 `/` 开头的根路径**（如 `/specs/...`、`/packages/...`）：GitHub 会把它解析成站点根路径而 404
+- 指向仓库内其他位置（packages / examples 源码、README）同样使用相对路径，如 `../../packages/neo-engine/README.md`
 
 ## 命名
 

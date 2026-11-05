@@ -12,16 +12,16 @@
 | 游戏形态 | 混合：原工程 = 场景数据(JSON) + 类型化脚本(TS)；构建期静态校验，禁止 DOM/浏览器专属 API |
 | 渲染关系 | 共享外壳（生命周期/场景切换/输入/资源/平台适配），渲染 API 不统一：**2D 用 Phaser 3.90、3D 用 Three.js**；场景数据 `mode: '2d'\|'3d'` 选引擎，两者互不混合渲染 |
 | 3D 内 2D UI | **Three 内置正交相机 UI 层**（Sprite/CanvasTexture/命中检测 + 内置 UI 组件）。**推翻早期「Phaser+Three 共享上下文混合渲染」决策**：Phaser 3 无外部渲染后状态恢复 API（需 hack 私有字段）、Phaser 4 该能力一等支持但小游戏适配为零，权衡后放弃混合渲染，两引擎解耦、互不共享 context |
-| 引擎选型 | **Phaser 3.90（锁定版本）+ Three.js**。Phaser 4（4.2.x）功能/混合渲染架构更优但小游戏适配完全空白 + AI 裸生成正确率低，**列为技术跟踪项**：跑通微信/抖音最小 Phaser 4 场景 spike 后再评估迁移（见 [research/phaser-v3-vs-v4.md](/specs/features/neo-engine/research/phaser-v3-vs-v4.md)） |
+| 引擎选型 | **Phaser 3.90（锁定版本）+ Three.js**。Phaser 4（4.2.x）功能/混合渲染架构更优但小游戏适配完全空白 + AI 裸生成正确率低，**列为技术跟踪项**：跑通微信/抖音最小 Phaser 4 场景 spike 后再评估迁移（见 [research/phaser-v3-vs-v4.md](research/phaser-v3-vs-v4.md)） |
 | 引擎宿主 | 双轨：H5/NeoTap 走共享宿主（游戏包只带数据+脚本）；微信/抖音小游戏内置运行时 |
-| 编译管线 | 三段式：原工程（唯一源码）→ 转译（平台特定人类可读源码）→ 编译（平台特定工具链出发布包）。**转译用 vite**（bundle 锁定 CommonJS+ES5，禁 eval/new Function、Proxy 不可用），**编译/发布用平台官方工具**（微信 `miniprogram-ci` 支持 `type:'miniGame'`；抖音走 IDE/IDE CLI 上传，`@douyin-minigame/cli` 非上传工具）。无成熟 vite 小游戏插件，自组装最低风险（见 [research/build-toolchain.md](/specs/features/neo-engine/research/build-toolchain.md)） |
-| 小游戏适配 | 官方 adapter 基线（抖音 `tt-adapter` 明确支持 three/phaser 且有官方 demo；微信 `weapp-adapter` 官方自述「模拟远不完整仅作参考」）+ 薄平台分派层（`typeof wx !== 'undefined' ? wx : tt`）+ 补丁；**必须 vendor 进仓库**（两侧官方 adapter 均非活跃开源）。注意抖音命名空间是 `tt.*` 不是 `dd.*`（见 [research/minigame-adapter.md](/specs/features/neo-engine/research/minigame-adapter.md)） |
+| 编译管线 | 三段式：原工程（唯一源码）→ 转译（平台特定人类可读源码）→ 编译（平台特定工具链出发布包）。**转译用 vite**（bundle 锁定 CommonJS+ES5，禁 eval/new Function、Proxy 不可用），**编译/发布用平台官方工具**（微信 `miniprogram-ci` 支持 `type:'miniGame'`；抖音走 IDE/IDE CLI 上传，`@douyin-minigame/cli` 非上传工具）。无成熟 vite 小游戏插件，自组装最低风险（见 [research/build-toolchain.md](research/build-toolchain.md)） |
+| 小游戏适配 | 官方 adapter 基线（抖音 `tt-adapter` 明确支持 three/phaser 且有官方 demo；微信 `weapp-adapter` 官方自述「模拟远不完整仅作参考」）+ 薄平台分派层（`typeof wx !== 'undefined' ? wx : tt`）+ 补丁；**必须 vendor 进仓库**（两侧官方 adapter 均非活跃开源）。注意抖音命名空间是 `tt.*` 不是 `dd.*`（见 [research/minigame-adapter.md](research/minigame-adapter.md)） |
 | 分包 | 转译阶段可配置分包策略 + 资源远程/集成可选 |
 | 产物格式 | 平台无关 manifest + 每平台产物；宿主平台的静态资源托管后续按需适配，不硬 fit 现状 |
 | 平台能力(RAL) | 能力接口（IStorage/IAudio/IInput/ILifecycle/…）+ 每平台实现 + 能力降级 |
 | 首期开放能力 | **仅本地存储 + 音频播放**。引擎必需项（资源加载/输入/生命周期/渲染上下文）随外壳默认提供；震动/分享/埋点/广告/支付/登录均后置，但接口预留扩展点，后补不改架构 |
 | 资源寻址 | `IResource.resolveAsset(key)` 统一 resolver：`/xxx` → `assets/xxx`，H5 返回带 base 的 URL、小游戏返回包内相对路径；资产清单不参与寻址 |
-| 移动端 | Capacitor（复用 H5 产物）。当前稳定 v8（Node≥22）；官方游戏指南首推 Phaser+Capacitor；壳内嵌宿主运行时、UGC 游戏产物远程加载；存储走 `@capacitor/preferences` 勿用 localStorage；iOS 需隐私清单、国内安卓需备案+软著（见 [research/capacitor.md](/specs/features/neo-engine/research/capacitor.md)） |
+| 移动端 | Capacitor（复用 H5 产物）。当前稳定 v8（Node≥22）；官方游戏指南首推 Phaser+Capacitor；壳内嵌宿主运行时、UGC 游戏产物远程加载；存储走 `@capacitor/preferences` 勿用 localStorage；iOS 需隐私清单、国内安卓需备案+软著（见 [research/capacitor.md](research/capacitor.md)） |
 | 桌面端 | 暂缓（Tauri/Electron 皆可，后续再定） |
 | 其他平台 | 逐个加平台实现（延续社区 adapter 优先策略），不引入 Taro/uni-app |
 | 工程归属 | **两包分离**：`@neotap.app/neo-engine` 只含客户端 SDK（`src/sdk`，游戏脚本与宿主引用）；`@neotap.app/neo-engine-tools` 含构建工具 + CLI（`src/build` + `src/cli`，Node 侧，依赖 SDK）。宿主平台（AI 创作侧）注入提示词 + SDK 供 sandbox 内测试/验证/构建（暂不支持 sandbox 内发布构建）；原工程上传平台审核，平台用**无头构建服务**（`@neotap.app/neo-engine-tools/build`）构建/发布 |
@@ -59,7 +59,7 @@
 - 小游戏：`resolveAsset` 返回包内相对路径 `assets/...`；文本/二进制优先 `getFileSystemManager().readFileSync` 读包内文件，显式配置 `baseUrl` 时才退回 `request`；图片走 `api.createImage` / 全局 `createImage`，不可用时明确 reject
 - 外部组件：Three.js 等通过 `ctx.load.resolveAsset` 复用同一套寻址，如 `manager.setURLModifier((url) => ctx.load.resolveAsset(url) ?? url)`
 - 音频不在 `IResource` 内：`IAudio` 用 `resolve(key)` 取得来源，支持 `preload(key)` 与 `play(key, options): AudioHandle`（每次播放独立实例，可并发/重启，带 `onEnded` / `onError`）
-- 后续可追加 sprite sheet 合并 / 多分辨率变体 / 预加载（非寻址必需，见 [asset-pipeline.md](/specs/features/neo-engine/asset-pipeline.md)）
+- 后续可追加 sprite sheet 合并 / 多分辨率变体 / 预加载（非寻址必需，见 [asset-pipeline.md](asset-pipeline.md)）
 
 
 ### manifest（`package.neo.json`，仅 4 字段）
@@ -86,8 +86,8 @@
 2. **转译**：产出平台特定、人类可读的源码（如小游戏包结构、共享宿主 bundle）
 3. **编译**：用平台特定工具链产出最终发布包
 
-- 工具链选型：**转译用 vite（CommonJS+ES5）、编译/发布用平台官方工具**，见 [research/build-toolchain.md](/specs/features/neo-engine/research/build-toolchain.md)
-- 分包限制（微信主包 4M/总包 30M/单分包不限；抖音总包 20M/主包 4M/单分包 20M），详见 [research/build-toolchain.md](/specs/features/neo-engine/research/build-toolchain.md)
+- 工具链选型：**转译用 vite（CommonJS+ES5）、编译/发布用平台官方工具**，见 [research/build-toolchain.md](research/build-toolchain.md)
+- 分包限制（微信主包 4M/总包 30M/单分包不限；抖音总包 20M/主包 4M/单分包 20M），详见 [research/build-toolchain.md](research/build-toolchain.md)
 - 发布产物 = 平台无关 manifest + 各平台产物引用；审核用原工程（含源码）
 
 ### 构建接口（`@neotap.app/neo-engine-tools/build`）
@@ -166,10 +166,10 @@ packages/neo-engine-tools/src/    # @neotap.app/neo-engine-tools：构建工具 
 
 ## 调研索引
 
-- [research/build-toolchain.md](/specs/features/neo-engine/research/build-toolchain.md) — 小游戏构建工具链、包体/分包限制、JS 语法约束（B1 选型结论）
-- [research/minigame-adapter.md](/specs/features/neo-engine/research/minigame-adapter.md) — Phaser/Three 在小游戏无 DOM 环境的适配现状（B2 选型结论）
-- [research/phaser-v3-vs-v4.md](/specs/features/neo-engine/research/phaser-v3-vs-v4.md) — Phaser 3 vs 4 权衡（引擎选型 + Q2 决策推翻）
-- [research/capacitor.md](/specs/features/neo-engine/research/capacitor.md) — Capacitor 打包 H5 游戏（D1 落地建议）
+- [research/build-toolchain.md](research/build-toolchain.md) — 小游戏构建工具链、包体/分包限制、JS 语法约束（B1 选型结论）
+- [research/minigame-adapter.md](research/minigame-adapter.md) — Phaser/Three 在小游戏无 DOM 环境的适配现状（B2 选型结论）
+- [research/phaser-v3-vs-v4.md](research/phaser-v3-vs-v4.md) — Phaser 3 vs 4 权衡（引擎选型 + Q2 决策推翻）
+- [research/capacitor.md](research/capacitor.md) — Capacitor 打包 H5 游戏（D1 落地建议）
 
 ## 未来规划
 

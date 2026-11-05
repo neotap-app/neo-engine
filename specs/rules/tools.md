@@ -1,7 +1,7 @@
 # 构建工具规范（packages/neo-engine-tools）
 
 `@neotap.app/neo-engine-tools`（构建工具 + `neo` CLI）的编码约束与最高规则。
-编译管线设计见 [/specs/features/neo-engine/README.md](/specs/features/neo-engine/README.md)。
+编译管线设计见 [../features/neo-engine/README.md](../features/neo-engine/README.md)。
 
 ## 边界约束
 
@@ -27,7 +27,7 @@
 - key 归一化与 SDK 保持一致：`/textures/a.png`、`textures/a.png`、`assets/textures/a.png`、`./assets/textures/a.png` 等价；空 key、`..` 穿越、绝对 URL/协议、`//` 开头的路径视为非法
 - 寻址：`IResource.resolveAsset(key)` 统一解析为 `assets/<key>`；H5 以 `import.meta.env.BASE_URL` 为 base 返回 URL，小游戏返回包内相对路径
 - 资产复制结果属于构建产物，不入库
-- 详细语义见 [asset-pipeline.md](/specs/features/neo-engine/asset-pipeline.md)；hash 缓存 / 压缩 / 图集合并 / 预加载 / 进度属于后续阶段，本次不做
+- 详细语义见 [asset-pipeline.md](../features/neo-engine/asset-pipeline.md)；hash 缓存 / 压缩 / 图集合并 / 预加载 / 进度属于后续阶段，本次不做
 
 ### H5 资源基础路径（base）
 

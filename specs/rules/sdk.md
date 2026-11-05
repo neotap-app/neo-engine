@@ -1,7 +1,7 @@
 # SDK 规范（packages/neo-engine）
 
-`@neotap.app/neo-engine` 的编码约束与最高规则。目录结构见 [/specs/overview/architecture.md](/specs/overview/architecture.md)，
-引擎需求与决策见 [/specs/features/neo-engine/README.md](/specs/features/neo-engine/README.md)。
+`@neotap.app/neo-engine` 的编码约束与最高规则。目录结构见 [../overview/architecture.md](../overview/architecture.md)，
+引擎需求与决策见 [../features/neo-engine/README.md](../features/neo-engine/README.md)。
 
 ## 边界约束
 
