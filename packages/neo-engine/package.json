@@ -42,8 +42,7 @@
   "scripts": {
     "build": "tsup",
     "dev": "tsup --watch",
-    "type-check": "tsc --noEmit",
-    "clean": "rimraf dist"
+    "type-check": "tsc --noEmit"
   },
   "dependencies": {
     "phaser": "3.90.0",
@@ -51,7 +50,6 @@
   },
   "devDependencies": {
     "@types/three": "^0.186.0",
-    "rimraf": "^5.0.0",
     "tsup": "^8.0.0",
     "typescript": "^5.5.0"
   }

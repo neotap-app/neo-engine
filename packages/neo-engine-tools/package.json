@@ -48,8 +48,7 @@
   "scripts": {
     "build": "tsup",
     "dev": "tsup --watch",
-    "type-check": "tsc --noEmit",
-    "clean": "rimraf dist"
+    "type-check": "tsc --noEmit"
   },
   "dependencies": {
     "@neotap.app/neo-engine": "workspace:*",
@@ -58,7 +57,6 @@
   },
   "devDependencies": {
     "@types/node": "^20.11.5",
-    "rimraf": "^5.0.0",
     "tsup": "^8.0.0"
   }
 }
