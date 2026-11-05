@@ -18,7 +18,7 @@ neo <command> [options]
 
 | 命令 | 说明 |
 | --- | --- |
-| `neo lint` | 校验 manifest、入口、导入图、禁用全局与资产 key |
+| `neo lint` | 校验 manifest、入口、导入图与禁用全局 |
 | `neo build` | 构建到目标平台 |
 | `neo dev` | 启动 Vite 开发服务器 |
 | `neo preview` | 预览 H5 构建产物 |

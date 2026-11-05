@@ -18,14 +18,12 @@
 - 编译/发布用**平台官方工具链**（微信 `miniprogram-ci`；抖音走 IDE/IDE CLI）
 - 小游戏产物为**双 chunk**：保证 adapter 先于引擎加载
 - 资产管线：H5 与小游戏都由 `src/build/assets.ts` 统一处理
-  - 构建结束后把工程 `assets/**` 原样镜像到产物 `assets/**`（public 目录语义），保持目录结构；`copyAssets` 语义不变
-  - 扫描 `assets/**` 生成 `assets-manifest.json`：`{ version: 1, assets: [{ key, size, hash }] }`；`key` 为相对 `assets/` 的 POSIX 路径并按字典序排序，`size` 为字节数，`hash` 为完整的 sha256 十六进制
-  - 构建前与 `neo lint` 都校验代码中的字面量资产 key；未知 key 输出 `file:line:col`，`buildProject` 直接抛错（fail fast，不产出半成品）
-  - 构建结束后生成 `<cwd>/.neo/assets.d.ts`（`NeoAssetKey` 联合类型）与 `<cwd>/.neo/assets-manifest.json`（与产物内一致），供游戏代码引用与人工核对
-- key 归一化与 SDK 保持一致：`textures/a.png`、`assets/textures/a.png`、`./assets/textures/a.png` 等价；空 key、`..` 穿越、绝对 URL/协议、`/` 或 `//` 开头的路径视为非法
-- 寻址：运行时按相对路径直接请求 `assets/<key>`，H5 以 `import.meta.env.BASE_URL` 为 base，小游戏按包内相对路径读取；manifest 是元数据，不参与寻址，`game.js` 不传资产选项
-- 资产目录、复制结果、manifest 与 `.neo/` 生成物属于构建产物，不入库
-- 详细结构、校验匹配规则见 [asset-pipeline.md](/specs/features/neo-engine/asset-pipeline.md)；hash 缓存 / 压缩 / 图集合并 / 预加载 / 进度属于后续阶段，本次不做
+  - 构建结束后把工程 `assets/**` 原样镜像到产物 `assets/**`（public 目录语义），保持目录结构；`copyAssets` 是唯一职责
+  - **不生成** `assets-manifest.json` / `.neo/assets.d.ts`，也**不在 lint/build 阶段校验资产 key**；资产发现完全由 `assets/**` 目录决定，新增文件无需声明
+- key 归一化与 SDK 保持一致：`/textures/a.png`、`textures/a.png`、`assets/textures/a.png`、`./assets/textures/a.png` 等价；空 key、`..` 穿越、绝对 URL/协议、`//` 开头的路径视为非法
+- 寻址：`IResource.resolveAsset(key)` 统一解析为 `assets/<key>`；H5 以 `import.meta.env.BASE_URL` 为 base 返回 URL，小游戏返回包内相对路径
+- 资产复制结果属于构建产物，不入库
+- 详细语义见 [asset-pipeline.md](/specs/features/neo-engine/asset-pipeline.md)；hash 缓存 / 压缩 / 图集合并 / 预加载 / 进度属于后续阶段，本次不做
 
 ### H5 资源基础路径（base）
 
@@ -39,7 +37,7 @@
 
 - `neo dev`：在工程内创建 `.neo-dev/<pid>-<timestamp>/` 临时根目录，写入 `index.html` + bootstrap（复用 H5 bootstrap，import manifest 入口的绝对路径），启动 Vite dev server
   - 同步复制工程 `assets/**` 到临时根目录，dev 下按 public 目录语义直接请求 `assets/**`
-  - bootstrap 注入 `NeoManifest`，并以 `baseUrl: './'` 创建 H5 能力，保证 dev 与 H5 产物的资源/清单行为一致
+  - bootstrap 注入 `NeoManifest`，并以 `baseUrl: './'` 创建 H5 能力，保证 dev 与 H5 产物的资源行为一致
   - 监听入口所在目录与工程 `src/`，源码变更走 Vite HMR / 刷新
   - `--port <n>`（默认 5173，被占用时由 Vite 顺延）、`--host <addr>`（默认 `localhost`；裸 `--host` = `0.0.0.0`）
   - 启动后打印 `neo dev listening at <url>`；SIGINT / SIGTERM / SIGBREAK / SIGHUP / 正常退出时删除临时目录（进程被强杀时无法执行清理）
@@ -53,7 +51,6 @@
 
 - `neo lint`：校验 manifest 可解析、入口存在，并从入口遍历**本地 import 图**（跳过 `node_modules` / `dist` / `out` / `.neo-build` / `.neo-dev` / `.neo`）
 - 使用 **TypeScript AST** 解析（注释与字符串不误报），违规输出 `file:line:col`
-- 资产 key 校验：识别 `.loadText` / `.loadBinary` / `.loadImage` / `.resolve` / `.load` 以及同名独立函数调用，第一个参数为字符串字面量时与 `assets/` 索引比对；变量/模板字符串参数跳过；`assets/` 缺失视为空集合
 - 禁止的平台/浏览器用法：
   - DOM/BOM：`window` / `document` / `navigator` / `location` / `history` / `screen` / `localStorage` / `sessionStorage` / `indexedDB` / `getComputedStyle` / `matchMedia` / `performance` / `alert` / `confirm` / `prompt` / `CustomEvent` / `DOMParser` / `XMLSerializer` / `ResizeObserver` / `IntersectionObserver` / `MutationObserver` / `requestIdleCallback`
   - 网络/二进制/媒体：`fetch` / `XMLHttpRequest` / `WebSocket` / `Worker` / `SharedWorker` / `FileReader` / `Blob` / `File` / `URL` / `Image` / `Audio` / `AudioContext` / `webkitAudioContext` / `createImageBitmap`

@@ -639,6 +639,7 @@ export function createMinigameResource(api: MinigameAPI, options: MinigameCapabi
       const filePath = pathFor(key);
       return filePath ? { kind: 'local', path: filePath } : null;
     },
+    resolveAsset: pathFor,
     async load<T>(key: string): Promise<T> {
       return JSON.parse(await loadText(key)) as T;
     },

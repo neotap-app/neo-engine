@@ -20,7 +20,7 @@
 | 产物格式 | 平台无关 manifest + 每平台产物；宿主平台的静态资源托管后续按需适配，不硬 fit 现状 |
 | 平台能力(RAL) | 能力接口（IStorage/IAudio/IInput/ILifecycle/…）+ 每平台实现 + 能力降级 |
 | 首期开放能力 | **仅本地存储 + 音频播放**。引擎必需项（资源加载/输入/生命周期/渲染上下文）随外壳默认提供；震动/分享/埋点/广告/支付/登录均后置，但接口预留扩展点，后补不改架构 |
-| 资源寻址 | 运行时资源加载函数，平台 specific 运行时按打包配置 resolve（key → 远程鉴权 URL / 分包本地） |
+| 资源寻址 | `IResource.resolveAsset(key)` 统一 resolver：`/xxx` → `assets/xxx`，H5 返回带 base 的 URL、小游戏返回包内相对路径；资产清单不参与寻址 |
 | 移动端 | Capacitor（复用 H5 产物）。当前稳定 v8（Node≥22）；官方游戏指南首推 Phaser+Capacitor；壳内嵌宿主运行时、UGC 游戏产物远程加载；存储走 `@capacitor/preferences` 勿用 localStorage；iOS 需隐私清单、国内安卓需备案+软著（见 [research/capacitor.md](/specs/features/neo-engine/research/capacitor.md)） |
 | 桌面端 | 暂缓（Tauri/Electron 皆可，后续再定） |
 | 其他平台 | 逐个加平台实现（延续社区 adapter 优先策略），不引入 Taro/uni-app |
@@ -44,22 +44,22 @@
 
 ### 资产管线（assets）
 
-- 约定：工程 `assets/**` 原样镜像到产物 `assets/**`（public 目录行为，保持目录结构），游戏按相对路径直接访问；构建期**自动生成** `assets-manifest.json` 与 `.neo/assets.d.ts`（不手写），但游戏侧仍按路径 key 访问
-- 逻辑 key = 相对 `assets/` 的路径，也接受 `assets/` 与 `./assets/` 前缀，如 `textures/plant.png`、`assets/textures/plant.png`、`./assets/textures/plant.png` 等价
-- key 只允许相对路径：空 key、`..` 穿越、绝对 URL/协议、`/` 或 `//` 开头的路径一律拒绝
-- 运行时：`ctx.load` 即 `IResource`
+- 约定：工程 `assets/**` 原样镜像到产物 `assets/**`（public 目录行为，保持目录结构），游戏按路径直接访问；**不生成资产清单，也不做构建期 key 校验**，新增资产无需声明
+- 逻辑 key = 相对 `assets/` 的路径，也接受 `/`、`assets/`、`./assets/` 前缀，如 `/textures/plant.png`、`textures/plant.png`、`assets/textures/plant.png`、`./assets/textures/plant.png` 等价
+- key 校验：空 key、`..` 穿越、绝对 URL/协议、`//` 开头一律拒绝
+- 运行时：`ctx.load` 即 `IResource`；`resolveAsset(key)` 是统一 resolver
   ```ts
-  await ctx.load.loadText('data/config.txt');
-  const buf = await ctx.load.loadBinary('data/save.bin');
-  const image = await ctx.load.loadImage('textures/plant.png');
-  const json = await ctx.load.load<SceneData>('data/scene.json');
-  const source = ctx.load.resolve('audio/bgm.mp3');
+  await ctx.load.loadText('/data/config.txt');
+  const buf = await ctx.load.loadBinary('/data/save.bin');
+  const image = await ctx.load.loadImage('/textures/plant.png');
+  const json = await ctx.load.load<SceneData>('/data/scene.json');
+  const url = ctx.load.resolveAsset('/audio/bgm.mp3');
   ```
-- H5：URL = `joinAssetUrl(baseUrl, assetPath(key))`，bootstrap 传入 `baseUrl: import.meta.env.BASE_URL`；文本/二进制/JSON 走 `fetch`，图片走 `new Image()`
-- 小游戏：key 解析为 `{ kind: 'local', path: 'assets/...' }`；文本/二进制优先 `getFileSystemManager().readFileSync` 读包内文件，显式配置 `baseUrl` 时才退回 `request`；图片走 `api.createImage` / 全局 `createImage`，不可用时明确 reject
+- H5：`resolveAsset` 返回 `joinAssetUrl(baseUrl, assetPath(key))`，bootstrap 传入 `baseUrl: import.meta.env.BASE_URL`；文本/二进制/JSON 走 `fetch`，图片走 `new Image()`
+- 小游戏：`resolveAsset` 返回包内相对路径 `assets/...`；文本/二进制优先 `getFileSystemManager().readFileSync` 读包内文件，显式配置 `baseUrl` 时才退回 `request`；图片走 `api.createImage` / 全局 `createImage`，不可用时明确 reject
+- 外部组件：Three.js 等通过 `ctx.load.resolveAsset` 复用同一套寻址，如 `manager.setURLModifier((url) => ctx.load.resolveAsset(url) ?? url)`
 - 音频不在 `IResource` 内：`IAudio` 用 `resolve(key)` 取得来源，支持 `preload(key)` 与 `play(key, options): AudioHandle`（每次播放独立实例，可并发/重启，带 `onEnded` / `onError`）
-- 构建期校验代码中的字面量资产 key：未知 key 让 `neo lint` 与 `buildProject` 直接失败（`file:line:col`），不再等到运行时 404；详见 [asset-pipeline.md](/specs/features/neo-engine/asset-pipeline.md)
-- 已生成：`assets-manifest.json`（`{ version, assets: [{ key, size, hash }] }`）与 `.neo/assets.d.ts` 的 `NeoAssetKey` 联合类型。后续可在此基础上追加 sprite sheet 合并 / 多分辨率变体 / 预加载（非寻址必需）
+- 后续可追加 sprite sheet 合并 / 多分辨率变体 / 预加载（非寻址必需，见 [asset-pipeline.md](/specs/features/neo-engine/asset-pipeline.md)）
 
 
 ### manifest（`package.neo.json`，仅 4 字段）

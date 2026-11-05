@@ -44,6 +44,6 @@ Node 侧构建工具与 CLI，导出子路径：
 | `@neotap.app/neo-engine-tools/cli` | `runCLI`、`startDevServer`、`startPreviewServer` |
 | `bin: neo` | 命令行入口 |
 
-`./build` 导出：`buildProject`、`Target`、`BuildOptions`、`BuildResult`、`TargetBuildOptions`、`normalizeH5Base`、`DEFAULT_H5_BASE`、`validateProjectAssetKeys`、`collectAssets`、`writeAssetManifest`、`writeAssetTypes`、`copyAssets`、`AssetEntry`、`AssetManifest`、`ASSET_MANIFEST_FILE`、`NEO_DIR`。
+`./build` 导出：`buildProject`、`Target`、`BuildOptions`、`BuildResult`、`TargetBuildOptions`、`normalizeH5Base`、`DEFAULT_H5_BASE`、`copyAssets`。
 
 详见 [构建工具总览](./tools/README.md)。

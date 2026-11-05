@@ -16,6 +16,7 @@ interface IImage {
 
 interface IResource extends Capability {
   resolve(key: string): ResourceSource | null;
+  resolveAsset(key: string): string | null;
   load<T>(key: string): Promise<T>;
   loadText(key: string): Promise<string>;
   loadBinary(key: string): Promise<ArrayBuffer>;
@@ -25,7 +26,8 @@ interface IResource extends Capability {
 
 | 方法 | 说明 |
 | --- | --- |
-| `resolve(key)` | 返回平台可寻址来源；key 非法返回 `null` |
+| `resolve(key)` | 返回平台可寻址来源（`remote` / `local`）；key 非法返回 `null` |
+| `resolveAsset(key)` | 统一 resolver：H5 返回带 `baseUrl` 的 URL，小游戏返回包内相对路径；key 非法返回 `null` |
 | `load<T>(key)` | 按 JSON 解析 |
 | `loadText(key)` | 读取文本 |
 | `loadBinary(key)` | 读取二进制 |
@@ -34,3 +36,10 @@ interface IResource extends Capability {
 `IImage.source` 是平台原生图片对象（`HTMLImageElement` / `ImageBitmap` / 小游戏 `createImage()` 结果），需要绘制时按目标平台断言。`url` 仅 H5 提供。当前实现不提供 `dispose`。
 
 key 规则与工具函数见 [资源 key](../assets/keys.md)，平台实现见 [H5](../platforms/h5.md) / [小游戏能力](../platforms/minigame/capabilities.md)。
+
+外部组件（Three.js 等）通过 `resolveAsset` 复用同一寻址：
+
+```ts
+const manager = new THREE.LoadingManager();
+manager.setURLModifier((url) => ctx.load.resolveAsset(url) ?? url);
+```

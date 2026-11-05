@@ -18,6 +18,11 @@ export interface IImage {
 
 export interface IResource extends Capability {
   resolve(key: string): ResourceSource | null;
+  /**
+   * 平台无关的资源寻址入口：接受 `/xxx`、`assets/xxx`、`./assets/xxx` 或 `xxx`，
+   * 返回当前平台可直接交给加载器的 URL / 本地路径；非法 key 返回 `null`。
+   */
+  resolveAsset(key: string): string | null;
   load<T>(key: string): Promise<T>;
   loadText(key: string): Promise<string>;
   loadBinary(key: string): Promise<ArrayBuffer>;
@@ -29,6 +34,12 @@ export function normalizeAssetKey(key: string): string {
   while (normalized.startsWith('./')) {
     normalized = normalized.slice(2);
   }
+  while (normalized.startsWith('/')) {
+    normalized = normalized.slice(1);
+  }
+  if (normalized === ASSET_DIR) {
+    return '';
+  }
   if (normalized.startsWith(`${ASSET_DIR}/`)) {
     normalized = normalized.slice(ASSET_DIR.length + 1);
   }
@@ -37,7 +48,7 @@ export function normalizeAssetKey(key: string): string {
 
 export function assetPath(key: string): string | null {
   const raw = key.trim().replace(/\\/g, '/');
-  if (!raw || raw.startsWith('/') || /^[a-z][a-z0-9+.-]*:/i.test(raw)) {
+  if (!raw || raw.startsWith('//') || /^[a-z][a-z0-9+.-]*:/i.test(raw)) {
     return null;
   }
   const normalized = normalizeAssetKey(raw);
@@ -69,6 +80,7 @@ export function createNoopResource(): IResource {
     name: 'resource',
     available: false,
     resolve: () => null,
+    resolveAsset: () => null,
     load: reject,
     loadText: reject,
     loadBinary: reject,

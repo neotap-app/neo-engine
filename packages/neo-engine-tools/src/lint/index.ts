@@ -4,9 +4,7 @@ import path from 'node:path';
 import { NeoManifest } from '@neotap.app/neo-engine';
 import ts from 'typescript';
 
-import { collectAssets } from '../build/assets';
 import { readManifest } from '../build/common';
-import { collectAssetKeyErrors } from './asset-keys';
 import { collectLocalImportGraph, toRelative } from './graph';
 
 export interface LintResult {
@@ -94,10 +92,8 @@ export async function lintProject(cwd: string): Promise<LintResult> {
   const graph = collectLocalImportGraph(root, entryPath);
   errors.push(...graph.errors);
 
-  const available = new Set(collectAssets(cwd).map((asset) => asset.key));
   for (const { source } of graph.files) {
     collectForbiddenUsage(source, root, errors);
-    errors.push(...collectAssetKeyErrors(source, root, available));
   }
 
   return { ok: errors.length === 0, errors, warnings };

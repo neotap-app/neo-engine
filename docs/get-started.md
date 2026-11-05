@@ -58,7 +58,7 @@ const game: NeoGameInstance2D = {
     // 平台能力统一从 ctx 获取，禁止直接访问 window / wx / tt
     ctx.storage.set('visited', '1');
 
-    const image = await ctx.load.loadImage('textures/logo.png');
+    const image = await ctx.load.loadImage('/textures/logo.png');
     void image;
 
     ctx.input.onPointerDown((event) => {
@@ -97,7 +97,7 @@ neo build --target h5 --base /games/my-game/
 ## 4. 几条硬约束
 
 - 游戏脚本只依赖 `ctx` 暴露的能力接口，不直接用浏览器 / 小游戏全局。
-- `ctx.load.*` 的 key 是相对 `assets/` 的路径，如 `textures/logo.png`；构建期会校验代码里的字面量 key。
+- `assets/**` 自动打包，无需声明清单；`ctx.load.*` 的 key 直接用 `/textures/logo.png`（等价 `assets/textures/logo.png`）。
 - 2D 与 3D 互不混合渲染，一个入口只选一种 `mode`。
 - 音频建议在首次用户手势里调用 `await ctx.audio.unlock()`。
 

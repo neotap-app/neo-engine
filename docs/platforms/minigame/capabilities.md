@@ -37,7 +37,7 @@ interface MinigameCapabilities extends CapabilityBundle {
 | audio | `createInnerAudioContext`；`preload` 10s 超时 resolve `0`；`unlock` 直接 resolve |
 | input | 仅触摸；`pointercancel` 仅在平台提供 `onTouchCancel` 时可用；键盘/滚轮为空操作 |
 | lifecycle | 平台提供 `onShow` + `onHide` 时 `available` 为 `true` |
-| resource | 先读包内 `assets/**`（`readFileSync`）；配置 `baseUrl` 时回退 `request`；图片走 `createImage` / 全局 `createImage` |
+| resource | `resolveAsset` 返回包内 `assets/**` 相对路径；`load*` 优先 `readFileSync`，配置 `baseUrl` 时回退 `request`；图片走 `createImage` / 全局 `createImage` |
 | system | 读取 `getSystemInfoSync` / `getDeviceInfo` / `getAppBaseInfo` / `getSDKVersion` |
 | screen | 方向以 `windowWidth` / `windowHeight` 判定；支持时可用 `setDeviceOrientation` 主动改方向 |
 

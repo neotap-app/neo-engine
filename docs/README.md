@@ -48,13 +48,12 @@
 ## 资源
 
 - [资源 key](./assets/keys.md)
-- [资产产物与 manifest](./assets/manifest.md)
 
 ## 构建工具与 CLI
 
 - [工具总览](./tools/README.md)
 - [buildProject](./tools/build.md)
-- [资产工具](./tools/build-assets.md)
+- [资产拷贝](./tools/build-assets.md)
 - [CLI 命令](./tools/cli.md)
 - [lint](./tools/lint.md)
 - [dev server](./tools/dev-server.md)

@@ -20,9 +20,9 @@
 - 无实现的能力一律 **no-op 降级**，接口预留扩展点（震动 / 分享 / 埋点 / 广告 / 支付 / 登录等后补，**不改架构**）
 - 新增平台 = 新增 `platforms/<platform>/` 实现 + 自动检测，不改调用方
 - 方向/屏幕信息：小游戏侧基于 `MinigameAPI` 抽象（`getSystemInfoSync` / `setDeviceOrientation` / `onDeviceOrientationChange`），方向判定以 `windowWidth`/`windowHeight` 为准（微信文档提示 iOS 横屏 `deviceOrientation` 可能不准）
-- 资源 key = 相对工程 `assets/` 的路径，也接受 `assets/` 与 `./assets/` 前缀；统一经 `types/game-context/resource.ts` 的 `normalizeAssetKey` / `assetPath` 归一化为 `assets/<路径>`
-- 资产按 public 目录语义直接寻址：key 只能是对 `assets/` 的相对路径；空 key、`..` 穿越、绝对 URL/协议、`/` 或 `//` 开头一律拒绝（`assetPath` 返回 null，加载器报 `invalid resource key`）。构建期可生成 `assets-manifest.json` 与 `.neo/assets.d.ts` 作为可选元数据/类型，**不是寻址必需**（见 `specs/features/neo-engine/asset-pipeline.md`）
-- `IResource` 契约：`resolve(key)` 返回平台可寻址来源（H5 为 `remote`，小游戏为 `local`）；`load<T>` 保持 JSON 语义；类型化加载固定为 `loadText` / `loadBinary` / `loadImage`，新增资产类型走扩展而非改语义
+- 资源 key = 相对工程 `assets/` 的路径；`/textures/a.png`、`textures/a.png`、`assets/textures/a.png`、`./assets/textures/a.png` 等价，统一经 `types/game-context/resource.ts` 的 `normalizeAssetKey` / `assetPath` 归一化为 `assets/<路径>`
+- 资产按 public 目录语义直接寻址：空 key、`..` 穿越、绝对 URL/协议、`//` 开头一律拒绝（`assetPath` 返回 null，加载器报 `invalid resource key`）。**不生成资产清单、不做构建期 key 校验**，`assets/**` 自动打包，新增文件无需声明（见 `specs/features/neo-engine/asset-pipeline.md`）
+- `IResource` 契约：`resolveAsset(key)` 是统一 resolver，返回当前平台可直接交给加载器的 URL / 本地路径（H5 带 base，小游戏为 `assets/<路径>`）；`resolve(key)` 返回结构化来源（H5 为 `remote`，小游戏为 `local`）；`load<T>` 保持 JSON 语义；类型化加载固定为 `loadText` / `loadBinary` / `loadImage`，新增资产类型走扩展而非改语义。外部组件（如 Three.js `LoadingManager.setURLModifier`）通过 `resolveAsset` 复用同一套寻址
 - `loadImage` 返回平台无关 `IImage`（`{ key, source, width, height, url?, dispose? }`），**不返回 `HTMLImageElement`**；`source` 为平台原生图片对象，游戏按目标平台自行断言或走引擎抽象
 - H5 资源：URL = `joinAssetUrl(baseUrl, assetPath(key))`，`baseUrl` 来自 `import.meta.env.BASE_URL`；文本/二进制/JSON 走 `fetch`，图片走 `new Image()` 并包成 `IImage`。小游戏资源：优先 `getFileSystemManager().readFileSync` 读包内相对路径；显式配置 `baseUrl` 时才退回 `request`；图片走 `api.createImage` 或全局 `createImage` 并包成 `IImage`，不可用时明确 reject
 - 音频不并入 `IResource`：`IAudio` 通过 `IResource.resolve(key)` 取得来源，提供 `preload(key)`、`play(key, options): AudioHandle`（并发/重启/结束与错误回调）、`setMasterVolume` / `setMuted` / `unlock`；`IResource` 不承担解码/播放职责（见 `specs/features/neo-engine/resource-audio.md`）

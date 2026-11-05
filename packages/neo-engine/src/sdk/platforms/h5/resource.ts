@@ -37,6 +37,7 @@ export function createH5Resource(options: H5ResourceOptions = {}): IResource {
       const url = urlFor(key);
       return url ? { kind: 'remote', url } : null;
     },
+    resolveAsset: urlFor,
     async load<T>(key: string): Promise<T> {
       const res = await request(key);
       return (await res.json()) as T;

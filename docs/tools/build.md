@@ -30,10 +30,8 @@ function buildProject(options: BuildOptions): Promise<BuildResult>;
 ## 构建流程
 
 1. 读取 `package.neo.json`，校验 manifest，并精确比对声明的 `engine` 版本与已安装的 `@neotap.app/neo-engine` 版本；
-2. 从入口遍历本地 import 图，校验代码里的字面量资产 key；
-3. 任一校验失败直接抛错，不产出半成品；
-4. 按 target 构建；
-5. 写入 `assets-manifest.json` 与 `.neo/` 生成物。
+2. 任一校验失败直接抛错，不产出半成品；
+3. 按 target 构建，并把工程 `assets/**` 原样拷贝到产物（public 目录语义）。
 
 ## 产物结构
 
@@ -43,10 +41,9 @@ H5（`outDir` 默认 `dist`）：
 dist/
   index.html
   assets/                 # Vite 打包的 JS/CSS + 工程 assets/** 原样镜像，合并在此目录
-  assets-manifest.json
 ```
 
-> 工程资产保持 `assets/<key>` 相对路径，因此与 Vite 的构建资源共用 `assets/` 目录。
+> 工程资产保持 `assets/<key>` 相对路径，因此与 Vite 的构建资源共用 `assets/` 目录。资产自动打包，无需在 manifest 或代码中声明清单。
 
 小游戏（`wechat` / `douyin`）：
 
@@ -58,7 +55,6 @@ dist/
   project.config.json
   neotap-runtime/adapter.js
   assets/                 # 工程 assets/** 原样镜像
-  assets-manifest.json
 ```
 
 ## H5 base
@@ -76,4 +72,4 @@ function normalizeH5Base(base?: string): string;
 - 保留 `./`、相对路径、`https://`、`//` 形态；
 - 小游戏 target 忽略该参数。
 
-资产索引见 [资产产物与 manifest](../assets/manifest.md)，工具函数见 [资产工具](./build-assets.md)。
+资产寻址见 [资源 key](../assets/keys.md)，资产拷贝见 [资产拷贝](./build-assets.md)。
