@@ -10,10 +10,10 @@ A lightweight, cross-platform **JavaScript / TypeScript game framework** built o
 
 ## 特性 / Features
 
-- **一次编写，多端发布** — 一份代码即可构建发布为 **HTML5 游戏** / **独立客户端游戏**（Android / iOS / 桌面平台等）/ **NeoTap 小游戏** / **微信小游戏** / **抖音小游戏**。
-- **Write once, ship everywhere** — a single codebase builds and publishes to **HTML5 games**, **standalone client games** (Android / iOS / desktop, etc.), **NeoTap mini games**, **WeChat mini games**, and **Douyin mini games**.
-- **多平台运行时 SDK** — 封装跨平台运行时，提供**本地存档存储**、**广告变现**、**资源加载优化**、**设备信息**、**社交分享**等丰富能力，助力游戏快速上线。
-- **Multi-platform runtime SDK** — a unified cross-platform runtime provides rich capabilities such as **local save storage**, **ad monetization**, **optimized asset loading**, **device info**, and **social sharing**, helping you launch fast.
+- **一次编写，多端发布** — 一份代码即可构建发布为 **HTML5 游戏** / **NeoTap 小游戏** / **微信小游戏** / **抖音小游戏**；独立客户端（Android / iOS / 桌面平台）规划中。
+- **Write once, ship everywhere** — a single codebase builds and publishes to **HTML5 games**, **NeoTap mini games**, **WeChat mini games**, and **Douyin mini games**; standalone clients (Android / iOS / desktop) are planned.
+- **多平台运行时 SDK** — 封装跨平台运行时，提供**本地存档存储**、**资源加载**、**设备信息**等能力；**广告变现**、**社交分享**规划中。
+- **Multi-platform runtime SDK** — a unified cross-platform runtime provides **local save storage**, **asset loading**, and **device info**; **ad monetization** and **social sharing** are planned.
 
 ## 包结构 / Packages
 

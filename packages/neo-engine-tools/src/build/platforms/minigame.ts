@@ -5,7 +5,8 @@ import { build } from 'vite';
 
 import { copyAssets } from '../assets';
 import { neoErrorHandlerSource } from '../bootstrap';
-import { createTempDir, resolveEntry } from '../common';
+import { createTempDir, prepareOutputDir, resolveEntry } from '../common';
+import { createThreeStub, detectGameMode } from '../mode';
 import type { TargetBuildOptions } from '../types';
 
 export interface MinigameTargetInfo {
@@ -36,47 +37,61 @@ export async function buildMinigame(
 ): Promise<void> {
   const { cwd, manifest, outDir } = options;
   const entryAbs = resolveEntry(manifest, cwd);
-  const outAbs = path.resolve(cwd, outDir);
+  const mode = detectGameMode(cwd, entryAbs);
   const temp = createTempDir(cwd, BOOTSTRAP_DIR);
   const manifestLiteral = JSON.stringify(manifest.toJSON());
-
-  const adapterEntry = path.join(temp.dir, ADAPTER_ENTRY);
-  fs.writeFileSync(
-    adapterEntry,
-    [
-      `import { createMinigameRuntimeEnvironment, NeoManifest } from '@neotap.app/neo-engine';`,
-      `import type { MinigameAPI } from '@neotap.app/neo-engine';`,
-      ``,
-      `const manifest = NeoManifest.fromObject(${manifestLiteral});`,
-      ``,
-      `export function installMinigame(api: MinigameAPI) {`,
-      `  return createMinigameRuntimeEnvironment(api, { manifest });`,
-      `}`,
-      ``,
-    ].join('\n'),
-  );
-
-  const gameEntry = path.join(temp.dir, GAME_ENTRY);
-  fs.writeFileSync(
-    gameEntry,
-    [
-      `import { createRuntime, NeoManifest } from '@neotap.app/neo-engine';`,
-      `export { createRuntime, NeoManifest };`,
-      `export { default } from ${JSON.stringify(entryAbs)};`,
-      ``,
-    ].join('\n'),
-  );
+  const outputOptions = {
+    chunkFileNames: '[name]-[hash].js',
+  };
 
   try {
+    const threeAlias = mode === '2d' ? createThreeStub(temp.dir) : null;
+    const outAbs = prepareOutputDir(cwd, outDir);
+    const resolve = threeAlias
+      ? { alias: [{ find: /^three$/, replacement: threeAlias }] }
+      : undefined;
+
+    const adapterEntry = path.join(temp.dir, ADAPTER_ENTRY);
+    fs.writeFileSync(
+      adapterEntry,
+      [
+        `import { createMinigameRuntimeEnvironment, NeoManifest } from '@neotap.app/neo-engine';`,
+        `import type { MinigameAPI } from '@neotap.app/neo-engine';`,
+        ``,
+        `const manifest = NeoManifest.fromObject(${manifestLiteral});`,
+        ``,
+        `export function installMinigame(api: MinigameAPI) {`,
+        `  return createMinigameRuntimeEnvironment(api, { manifest });`,
+        `}`,
+        ``,
+      ].join('\n'),
+    );
+
+    const gameEntry = path.join(temp.dir, GAME_ENTRY);
+    fs.writeFileSync(
+      gameEntry,
+      [
+        `import { createRuntime, NeoManifest } from '@neotap.app/neo-engine';`,
+        `export { createRuntime, NeoManifest };`,
+        `export { default } from ${JSON.stringify(entryAbs)};`,
+        ``,
+      ].join('\n'),
+    );
+
     await build({
       root: temp.dir,
       logLevel: 'warn',
+      resolve,
       build: {
         outDir: path.join(outAbs, 'neotap-runtime'),
+        emptyOutDir: false,
         lib: {
           entry: adapterEntry,
           formats: ['cjs'],
           fileName: () => 'adapter.js',
+        },
+        rolldownOptions: {
+          output: outputOptions,
         },
       },
     });
@@ -84,6 +99,7 @@ export async function buildMinigame(
     await build({
       root: temp.dir,
       logLevel: 'warn',
+      resolve,
       build: {
         outDir: outAbs,
         emptyOutDir: false,
@@ -91,6 +107,9 @@ export async function buildMinigame(
           entry: gameEntry,
           formats: ['cjs'],
           fileName: () => 'game-core.js',
+        },
+        rolldownOptions: {
+          output: outputOptions,
         },
       },
     });
