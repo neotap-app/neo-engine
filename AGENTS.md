@@ -27,6 +27,10 @@ pnpm workspace monorepo：
 3. 查询第三方库相关定义/文档
 4. 给出初步修改方案，经用户确认后再动手
 
+## 文档同步
+
+- **任何代码改动都要及时更新到文档**：新增或修改公开 API、配置、命令、平台行为、使用方式时，同步更新 `/docs` 下对应文档（`docs/get-started.md`、`docs/README.md` 及各子目录）。文档未同步视为改动未完成。
+
 ## 规范入口（按需渐进阅读）
 
 - `/specs/overview/architecture.md` — 目录结构与关键模式
