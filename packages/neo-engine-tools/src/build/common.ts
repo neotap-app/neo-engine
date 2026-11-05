@@ -63,12 +63,64 @@ export interface TempDir {
 }
 
 export function createTempDir(cwd: string, name: string): TempDir {
-  const dir = path.join(cwd, `${name}-${process.pid}-${Date.now()}`);
+  const base = path.join(cwd, name);
+  fs.mkdirSync(base, { recursive: true });
+  pruneStaleTempDirs(base);
+
+  const dir = path.join(base, `${process.pid}-${Date.now()}`);
   fs.mkdirSync(dir, { recursive: true });
   return {
     dir,
     dispose() {
       fs.rmSync(dir, { recursive: true, force: true });
+      try {
+        fs.rmdirSync(base);
+      } catch {
+        // Another build is still using the same temp root.
+      }
     },
   };
+}
+
+export function prepareOutputDir(cwd: string, outDir: string): string {
+  const cwdAbs = path.resolve(cwd);
+  const outAbs = path.resolve(cwd, outDir);
+  const relative = path.relative(outAbs, cwdAbs);
+  if (relative === '' || (!relative.startsWith('..') && !path.isAbsolute(relative))) {
+    throw new Error(`refusing to clean output directory ${outAbs}: it contains the project root`);
+  }
+  fs.rmSync(outAbs, { recursive: true, force: true });
+  fs.mkdirSync(outAbs, { recursive: true });
+  return outAbs;
+}
+
+function pruneStaleTempDirs(base: string): void {
+  let entries: fs.Dirent[];
+  try {
+    entries = fs.readdirSync(base, { withFileTypes: true });
+  } catch {
+    return;
+  }
+
+  for (const entry of entries) {
+    if (!entry.isDirectory()) {
+      continue;
+    }
+    const pid = Number(entry.name.split('-')[0]);
+    if (!Number.isInteger(pid) || pid <= 0 || pid === process.pid) {
+      continue;
+    }
+    if (!isProcessAlive(pid)) {
+      fs.rmSync(path.join(base, entry.name), { recursive: true, force: true });
+    }
+  }
+}
+
+function isProcessAlive(pid: number): boolean {
+  try {
+    process.kill(pid, 0);
+    return true;
+  } catch {
+    return false;
+  }
 }

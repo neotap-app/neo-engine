@@ -1,7 +1,7 @@
 # 架构
 
-整体定位与技术选型见根 `AGENTS.md`；引擎需求与决策见 [/specs/features/neo-engine/README.md](/specs/features/neo-engine/README.md)。
-编码约定见 [/specs/rules/sdk.md](/specs/rules/sdk.md) / [/specs/rules/tools.md](/specs/rules/tools.md)。
+整体定位与技术选型见根 `AGENTS.md`；引擎需求与决策见 [../features/neo-engine/README.md](../features/neo-engine/README.md)。
+编码约定见 [../rules/sdk.md](../rules/sdk.md) / [../rules/tools.md](../rules/tools.md)。
 
 ## 目录结构
 
@@ -32,8 +32,8 @@ examples/phaser-demo/             # 示例游戏工程（原工程结构示范�
 
 | 领域 | 约定 |
 | --- | --- |
-| 编译管线 | 原工程 → 转译（vite）→ 编译/发布（平台官方工具）（见 [/specs/rules/tools.md](/specs/rules/tools.md)） |
+| 编译管线 | 原工程 → 转译（vite）→ 编译/发布（平台官方工具）（见 [../rules/tools.md](../rules/tools.md)） |
 | manifest | `package.neo.json`（4 字段）；构建器基于 entry 的 ES6 import 图自动分包/tree-shake |
-| RAL | 能力接口 + 每平台实现 + no-op 降级（见 [/specs/rules/sdk.md](/specs/rules/sdk.md)） |
+| RAL | 能力接口 + 每平台实现 + no-op 降级（见 [../rules/sdk.md](../rules/sdk.md)） |
 | 产物 | 平台无关 manifest + 每平台产物 |
 | 引擎 | 2D = Phaser 3.90（锁定）、3D = Three.js；`GameMode` 二选一，互不混合渲染 |

@@ -12,6 +12,43 @@ my-game/
     audio/bgm.mp3
 ```
 
+## 0. 前置条件与安装
+
+- Node.js：`^20.19.0 || >=22.12.0`（Vite 8 / rolldown 的最低要求）
+- pnpm：`10.12.3`
+
+```bash
+corepack enable
+corepack prepare pnpm@10.12.3 --activate
+```
+
+### 当前 monorepo / workspace（尚未发布 npm）
+
+游戏工程位于本仓库或通过 pnpm workspace 关联时，依赖直接使用 `workspace:*`：
+
+```json
+{
+  "dependencies": {
+    "@neotap.app/neo-engine": "workspace:*"
+  },
+  "devDependencies": {
+    "@neotap.app/neo-engine-tools": "workspace:*"
+  }
+}
+```
+
+在仓库根执行 `pnpm install`（会自动构建两个包）或 `pnpm build`，随后在游戏工程中运行 `pnpm exec neo ...`（或把 `neo` 写进 `package.json` scripts）。
+
+### 未来 npm 发布后
+
+```bash
+pnpm add @neotap.app/neo-engine
+pnpm add -D @neotap.app/neo-engine-tools
+pnpm exec neo lint
+```
+
+`@neotap.app/neo-engine-tools` 提供 `neo` 命令（`bin: neo`），安装后即可在工程脚本中直接调用。
+
 ## 1. 声明 manifest
 
 ```json

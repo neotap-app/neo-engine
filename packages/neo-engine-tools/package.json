@@ -1,9 +1,32 @@
 {
   "name": "@neotap.app/neo-engine-tools",
   "version": "0.1.0",
-  "private": true,
+  "license": "Apache-2.0",
+  "author": "NeoTap",
   "type": "module",
   "description": "Neo Engine 构建工具 + CLI：转译/打包小游戏与 H5 产物、无头构建接口。",
+  "keywords": [
+    "game",
+    "game-engine",
+    "phaser",
+    "threejs",
+    "minigame",
+    "wechat",
+    "douyin",
+    "h5",
+    "typescript",
+    "cli",
+    "build"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/neotap-app/neo-engine.git",
+    "directory": "packages/neo-engine-tools"
+  },
+  "homepage": "https://github.com/neotap-app/neo-engine#readme",
+  "bugs": {
+    "url": "https://github.com/neotap-app/neo-engine/issues"
+  },
   "exports": {
     "./build": {
       "types": "./dist/build/index.d.ts",
