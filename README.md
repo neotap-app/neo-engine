@@ -36,7 +36,7 @@ pnpm build
 在游戏工程中使用 / Use in a game project：
 
 - **当前 monorepo / workspace**：游戏工程通过 `workspace:*` 依赖 `@neotap.app/neo-engine` 与 `@neotap.app/neo-engine-tools`，在仓库根执行 `pnpm install && pnpm build` 后即可运行 `neo`。
-- **未来 npm 发布后 / Once published to npm**：安装运行时 `pnpm add @neotap.app/neo-engine`，并安装构建工具 `pnpm add -D @neotap.app/neo-engine-tools`，然后通过 `pnpm exec neo` 或在 `package.json` scripts 中调用 `neo`。
+- **从 npm 安装 / Install from npm**：安装运行时 `pnpm add @neotap.app/neo-engine`，并安装构建工具 `pnpm add -D @neotap.app/neo-engine-tools`，然后通过 `pnpm exec neo` 或在 `package.json` scripts 中调用 `neo`。
 
 详见 [Get Started](docs/get-started.md)。
 

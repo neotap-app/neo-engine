@@ -22,7 +22,7 @@ corepack enable
 corepack prepare pnpm@10.12.3 --activate
 ```
 
-### 当前 monorepo / workspace（尚未发布 npm）
+### 当前 monorepo / workspace
 
 游戏工程位于本仓库或通过 pnpm workspace 关联时，依赖直接使用 `workspace:*`：
 
@@ -39,7 +39,7 @@ corepack prepare pnpm@10.12.3 --activate
 
 在仓库根执行 `pnpm install`（会自动构建两个包）或 `pnpm build`，随后在游戏工程中运行 `pnpm exec neo ...`（或把 `neo` 写进 `package.json` scripts）。
 
-### 未来 npm 发布后
+### 从 npm 安装
 
 ```bash
 pnpm add @neotap.app/neo-engine
@@ -55,7 +55,7 @@ pnpm exec neo lint
 {
   "name": "my-game",
   "version": "1.0.0",
-  "engine": "neo-engine@0.1.0",
+  "engine": "neo-engine@0.1.1",
   "entry": "src/index.ts"
 }
 ```
