@@ -9,7 +9,7 @@
 - **仅 GitHub Actions**：工作流 `.github/workflows/publish-npm.yml`，不引入第三方发布服务。
 - **tag 触发 + 手动兜底**：推送 `v*` tag 时校验两个包的 `version` 与 tag 一致；`workflow_dispatch` 发布当前版本。
 - **版本手工维护**：不引入 changesets，发版时同时修改两个包的 `version` 并打同名 tag。
-- **NPM_TOKEN + provenance**：使用 granular access token（secret `NPM_TOKEN`），发布时启用 `--provenance`（需要 `id-token: write`，且源码仓库公开可访问）。
+- **NPM_TOKEN + provenance**：使用 granular access token（secret `NPM_TOKEN`），通过 `NPM_CONFIG_PROVENANCE=true` 启用 provenance（pnpm 不识别 `--provenance`；需要 `id-token: write`，且源码仓库公开可访问）。
 - **发布顺序**：先 `neo-engine`，后 `neo-engine-tools`（后者依赖前者）。
 - **幂等**：发布前用 `npm view <pkg>@<version>` 检查，已存在的版本跳过，允许失败后重跑。
 

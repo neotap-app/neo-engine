@@ -37,8 +37,8 @@ git push origin main --tags
 ## 仓库配置
 
 - 在仓库 Secrets 中配置 `NPM_TOKEN`：npm granular access token，至少拥有两个包所在 scope 的读写权限。
-- 工作流声明 `id-token: write` 并传入 `--provenance`，发布产物带 npm provenance（来源证明）。
-- npm provenance 要求源码仓库公开可访问；仓库为私有或需要关闭时，移除工作流中的 `--provenance`。
+- 工作流声明 `id-token: write`，并通过 `NPM_CONFIG_PROVENANCE=true` 启用 npm provenance（pnpm 不识别 `--provenance` CLI 参数）。
+- npm provenance 要求源码仓库公开可访问；仓库为私有或需要关闭时，移除工作流中的 `NPM_CONFIG_PROVENANCE`。
 
 ## 发布前检查
 
