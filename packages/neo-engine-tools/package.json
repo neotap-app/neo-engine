@@ -1,10 +1,10 @@
 {
   "name": "@neotap.app/neo-engine-tools",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "license": "Apache-2.0",
   "author": "NeoTap",
   "type": "module",
-  "description": "Neo Engine 构建工具 + CLI：转译/打包小游戏与 H5 产物、无头构建接口。",
+  "description": "Build tools and CLI for Neo Engine: transpile and bundle mini game and H5 output, with a headless build API.",
   "keywords": [
     "game",
     "game-engine",

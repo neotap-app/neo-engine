@@ -55,7 +55,7 @@ pnpm exec neo lint
 {
   "name": "my-game",
   "version": "1.0.0",
-  "engine": "neo-engine@0.1.1",
+  "engine": "neo-engine@0.1.2",
   "entry": "src/index.ts"
 }
 ```

@@ -1,10 +1,10 @@
 {
   "name": "@neotap.app/neo-engine",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "license": "Apache-2.0",
   "author": "NeoTap",
   "type": "module",
-  "description": "Neo Engine SDK：Phaser 3 (2D) + Three.js (3D) 多平台编译游戏引擎的客户端运行时。",
+  "description": "Client runtime SDK for Neo Engine, a cross-platform game engine built on Phaser 3 (2D) and Three.js (3D).",
   "keywords": [
     "game",
     "game-engine",
