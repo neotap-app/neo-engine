@@ -1,0 +1,74 @@
+name: Publish to npm
+
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+concurrency:
+  group: npm-publish-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10.12.3
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+          registry-url: https://registry.npmjs.org
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Verify tag matches package versions
+        if: startsWith(github.ref, 'refs/tags/v')
+        shell: bash
+        run: |
+          set -euo pipefail
+          TAG_VERSION="${GITHUB_REF_NAME#v}"
+          for pkg in packages/neo-engine packages/neo-engine-tools; do
+            PKG_NAME="$(node -p "require('./$pkg/package.json').name")"
+            PKG_VERSION="$(node -p "require('./$pkg/package.json').version")"
+            if [ "$PKG_VERSION" != "$TAG_VERSION" ]; then
+              echo "::error::$PKG_NAME version $PKG_VERSION does not match tag $GITHUB_REF_NAME"
+              exit 1
+            fi
+            echo "$PKG_NAME@$PKG_VERSION matches $GITHUB_REF_NAME"
+          done
+
+      - name: Type check
+        run: pnpm type-check
+
+      - name: Build
+        run: pnpm build
+
+      - name: Publish packages
+        shell: bash
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: |
+          set -euo pipefail
+          for pkg in packages/neo-engine packages/neo-engine-tools; do
+            PKG_NAME="$(node -p "require('./$pkg/package.json').name")"
+            PKG_VERSION="$(node -p "require('./$pkg/package.json').version")"
+            if npm view "$PKG_NAME@$PKG_VERSION" version >/dev/null 2>&1; then
+              echo "$PKG_NAME@$PKG_VERSION already exists on npm, skipping"
+              continue
+            fi
+            pnpm --filter "$PKG_NAME" publish --access public --no-git-checks --provenance
+          done
